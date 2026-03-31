@@ -8,6 +8,8 @@ from dotenv import load_dotenv
 import threading
 
 # Load environment variables
+# contract_address=TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t
+# relatedAddress=TDoXUNZ6PajKuiUkcYg3EDSV9bnqGqsbcf
 load_dotenv()
 TRONSCAN_API_KEY = os.getenv("TRONSCAN_API_KEY")
 CONTRACT_ADDRESS = os.getenv("contract_address")
