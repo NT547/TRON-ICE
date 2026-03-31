@@ -6,10 +6,10 @@ from datetime import datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dotenv import load_dotenv
 import threading
-
-# Load environment variables
+import sys
 # contract_address=TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t
 # relatedAddress=TDoXUNZ6PajKuiUkcYg3EDSV9bnqGqsbcf
+# Load environment variables
 load_dotenv()
 TRONSCAN_API_KEY = os.getenv("TRONSCAN_API_KEY")
 CONTRACT_ADDRESS = os.getenv("contract_address")
@@ -21,8 +21,13 @@ HEADERS = {
     "TRON-PRO-API-KEY": TRONSCAN_API_KEY
 }
 
-# Thread lock to prevent console output overlap
+# Thread locks and Stop Event
 print_lock = threading.Lock()
+data_lock = threading.Lock()   # Lock mới để bảo vệ lúc ghi vào list Global
+stop_event = threading.Event() # Cờ tín hiệu để dừng các luồng khi có Ctrl+C
+
+# Biến Global lưu toàn bộ dữ liệu theo thời gian thực
+global_transfers = []
 
 def fetch_time_chunk(start_date, end_date, chunk_id):
     """
@@ -31,11 +36,11 @@ def fetch_time_chunk(start_date, end_date, chunk_id):
     """
     chunk_transfers = []
     
-    # Convert datetime to millisecond timestamps
     start_ts = int(start_date.timestamp() * 1000)
     current_end_ts = int(end_date.timestamp() * 1000)
     
-    while current_end_ts >= start_ts:
+    # Bổ sung điều kiện: Chỉ tiếp tục lặp nếu stop_event chưa được bật
+    while current_end_ts >= start_ts and not stop_event.is_set():
         params = {
             "limit": 50,
             "start": 0,
@@ -43,8 +48,8 @@ def fetch_time_chunk(start_date, end_date, chunk_id):
             "relatedAddress": RELATED_ADDRESS,
             "confirm": "true",
             "filterTokenValue": 1,
-            "start_timestamp": start_ts,        # Floor limit
-            "end_timestamp": current_end_ts     # Sliding ceiling limit
+            "start_timestamp": start_ts,        
+            "end_timestamp": current_end_ts     
         }
 
         try:
@@ -53,7 +58,7 @@ def fetch_time_chunk(start_date, end_date, chunk_id):
             if response.status_code == 429:
                 with print_lock:
                     print(f"[Thread {chunk_id}] Rate Limit hit! Waiting 5s...")
-                time.sleep(5) # Set to 5s for safety during rate limit
+                time.sleep(5) 
                 continue
                 
             response.raise_for_status()
@@ -61,42 +66,45 @@ def fetch_time_chunk(start_date, end_date, chunk_id):
             transfers = data.get("token_transfers", [])
             
             if not transfers:
-                break # No more data in this time range
+                break 
                 
+            # Lưu vào list của luồng để tạo checkpoint
             chunk_transfers.extend(transfers)
             
-            # Slide time window backward
+            # Lưu ngay lập tức vào biến Global an toàn
+            with data_lock:
+                global_transfers.extend(transfers)
+            
             last_tx_time = transfers[-1].get("block_ts")
             current_end_ts = last_tx_time - 1
             
-            time.sleep(0.2) # Small delay to respect API limits
+            time.sleep(0.2) 
 
         except Exception as e:
             with print_lock:
                 print(f"[Thread {chunk_id}] Error: {e}")
             break
 
-    # Save checkpoint for each chunk to prevent data loss
+    # Dù luồng chạy xong hay bị dừng ngang bởi Ctrl+C, nó vẫn tự xuất checkpoint những gì đã lấy được
     if chunk_transfers:
         filename = f"data/raw/chunk_{chunk_id}_{start_date.strftime('%Y%m%d')}_to_{end_date.strftime('%Y%m%d')}.json"
         with open(filename, "w", encoding="utf-8") as f:
             json.dump(chunk_transfers, f, indent=4, ensure_ascii=False)
             
     with print_lock:
-        print(f"✅ [Thread {chunk_id}] Completed! Collected {len(chunk_transfers)} txs.")
+        if stop_event.is_set():
+            print(f"⚠️ [Thread {chunk_id}] Stopped early! Collected {len(chunk_transfers)} txs.")
+        else:
+            print(f"✅ [Thread {chunk_id}] Completed! Collected {len(chunk_transfers)} txs.")
         
     return chunk_transfers
 
 def scrape_multithreaded():
-    # Ensure directory exists
     os.makedirs("data/raw", exist_ok=True)
     
-    # 1. CONFIGURE TIME RANGE
-    # Scrape data from the last 365 days
     end_date_global = datetime.now()
     start_date_global = end_date_global - timedelta(days=365)
     
-    # Divide into 30-day chunks
     chunk_days = 30
     time_chunks = []
     
@@ -111,30 +119,35 @@ def scrape_multithreaded():
         current_start = current_end
         chunk_id += 1
 
-    print(f"🚀 Initializing {len(time_chunks)} scraping threads...")
+    print(f"🚀 Initializing {len(time_chunks)} scraping threads... (Press Ctrl+C to stop safely)")
     
-    all_final_transfers = []
-    
-    # 2. INITIALIZE THREAD POOL
-    # Recommendation: Keep max_workers between 3-5 to avoid IP ban
-    with ThreadPoolExecutor(max_workers=5) as executor:
-        # Submit tasks to the pool
-        futures = [
-            executor.submit(fetch_time_chunk, start, end, cid) 
-            for start, end, cid in time_chunks
-        ]
-        
-        # Aggregate results as threads finish
-        for future in as_completed(futures):
-            result = future.result()
-            all_final_transfers.extend(result)
+    # Bọc ThreadPoolExecutor bằng Try-Except-Finally để bắt sự kiện Ctrl+C
+    try:
+        with ThreadPoolExecutor(max_workers=5) as executor:
+            futures = [
+                executor.submit(fetch_time_chunk, start, end, cid) 
+                for start, end, cid in time_chunks
+            ]
+            
+            # Đợi các luồng chạy. Nếu có lỗi bên trong luồng, sẽ báo ở đây.
+            for future in as_completed(futures):
+                future.result()
 
-    # 3. MERGE ALL DATA
-    if all_final_transfers:
-        final_file = f"data/raw/MERGED_all_txs_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-        with open(final_file, "w", encoding="utf-8") as f:
-            json.dump(all_final_transfers, f, indent=4, ensure_ascii=False)
-        print(f"\n🎉 PROCESS COMPLETE! Merged {len(all_final_transfers)} total transactions into {final_file}")
+    except KeyboardInterrupt:
+        print("\n🛑 [WARNING] Ctrl+C detected! Signalling all threads to stop...")
+        stop_event.set() # Bật cờ để các luồng tự thoát khỏi vòng lặp while
+        print("⏳ Waiting for current requests to finish before saving data...")
+
+    finally:
+        # Khối Finally đảm bảo RẰNG DÙ BÌNH THƯỜNG HAY BỊ NGẮT, DATA VẪN LUÔN ĐƯỢC LƯU
+        if global_transfers:
+            final_file = f"data/raw/MERGED_all_txs_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+            with open(final_file, "w", encoding="utf-8") as f:
+                json.dump(global_transfers, f, indent=4, ensure_ascii=False)
+            print(f"\n🎉 PROCESS ENDED! Safely saved {len(global_transfers)} total transactions into {final_file}")
+        else:
+            print("\n⚠️ No data was collected before stopping.")
+            sys.exit(0)
 
 if __name__ == "__main__":
     scrape_multithreaded()
