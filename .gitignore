@@ -1,2 +1,4 @@
 .env
+.venv
 notebooks/note.txt
+__pycache__/
