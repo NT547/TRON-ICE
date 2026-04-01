@@ -6,7 +6,7 @@ import pandas as pd
 import os
 import datetime
 import os
-from src.utils.configs import print_lock
+from .configs import print_lock
 
 
 

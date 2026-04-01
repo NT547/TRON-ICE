@@ -14,7 +14,7 @@ import requests  # Gọi API lấy giá
 import time  # Sleep, timestamp
 from datetime import datetime, timedelta  # Xử lý thời gian
 from typing import Dict, List, Any, Optional
-from src.utils.configs import COINGECKO_API_KEY
+from src.utils.configs import COINGECKO
 
 # Định nghĩa các endpoint và mapping token cho API
 COINGECKO_API = "https://api.coingecko.com/api/v3"  # Endpoint CoinGecko
