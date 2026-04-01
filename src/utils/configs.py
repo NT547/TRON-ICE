@@ -14,7 +14,7 @@ HOT_WALLETS = {
     "changenow": os.getenv("changenow_hot_wallet"),
     "sideshift": os.getenv("sideshift_hot_wallet"),
 }
-
+COINGECKO = os.getenv("COINGECKO")
 HEADER = {
     "Content-Type": "application/json",
     "TRON-PRO-API-KEY": TRONGRID_API_KEY 
