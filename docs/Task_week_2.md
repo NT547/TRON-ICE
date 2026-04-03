@@ -19,12 +19,4 @@ Nhiệm vụ của bạn là xây dựng lớp nền học thuật vững chắc
 
 * [cite_start]**Viết mục Related Work:** Nhiệm vụ chính là viết mục Related Work[cite: 21].
 * [cite_start]**Chiến lược viết:** Lưu ý phải "phân nhóm" và so sánh các bài báo với nhau, không liệt kê rời rạc từng bài[cite: 21]. [cite_start]Mục tiêu là để "Bán" giải pháp của nhóm mình[cite: 22].
-* [cite_start]**Xử lý API tỷ giá (Sub Dev):** Hỗ trợ A gọi CoinGecko API để quy đổi tỷ giá token sang USD[cite: 23].
-
----
-
-### 💡 Lời khuyên chung cho tiến độ nhóm
-* **Tránh hội chứng "Bỏ quên báo cáo":** Sinh viên IT hay cắm đầu vào code đến ngày 17 mới bắt đầu viết chữ đầu tiên. 
-* **Chiến lược viết cuốn chiếu:** Ngày nào xong thuật toán, viết luôn phần Methodology của ngày đó.
-
-Hai bạn đã có sẵn tài khoản và API Key của TronGrid cũng như CoinGecko chưa để mình hướng dẫn thêm cách gọi API tối ưu, tránh bị dính lỗi Rate Limit?
+* [cite_start]**Xử lý API tỷ giá (Sub Dev):** Hỗ trợ A gọi CoinGecko API để quy đổi tỷ giá token sang USD[cite: 
