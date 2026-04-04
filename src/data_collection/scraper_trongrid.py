@@ -1,100 +1,54 @@
-import requests
+import pandas as pd
 import json
 import os
-import time
+import copy
 from datetime import datetime
-from dotenv import load_dotenv
-import sys
+from src.utils.configs import HEADER, HOT_WALLETS , CONTRACT_ADDRESS, URL_TRC20, URL_TRX, params, global_transfers
+from src.utils.helper import parse_trx, parse_trc20
+from src.data_collection.scaper_multithreaded  import  scrape_multithreaded
 
-# Load environment variables
-load_dotenv()
-TRONGRID_API_KEY = os.getenv("TRONGRID_API_KEY") 
-CONTRACT_ADDRESS = os.getenv("contract_address")
-RELATED_ADDRESS = os.getenv("relatedAddress")
+def scaping_trongrid(service, file_name=None,year=datetime.now().year, ):
 
-# Đổi URL sang TRONGRID
-URL = f"https://api.trongrid.io/v1/accounts/{RELATED_ADDRESS}/transactions/trc20"
+    if file_name is None:
+        file_name = f"trongrid_{service}_{year}"
+    else:
+        file_name = f"{file_name}_{service}_{year}"
+        
+        
+    min_ts = datetime(year, 1, 1).timestamp() * 1000
+    max_ts = datetime(year, 12, 31, 23, 59, 59).timestamp() * 1000
+    PARAMS = copy.deepcopy(params)
+    
+    scrape_multithreaded(
+        URL=URL_TRX.replace("_RELATED_ADDRESS_", HOT_WALLETS[service]),
+        RELATED_ADDRESS = HOT_WALLETS[service], 
+        HEADER = HEADER,
+        PARAMS= PARAMS, 
+        file_name=f"{file_name}_trx", 
+        min_timestamp=min_ts, 
+        max_timestamp=max_ts,
+        num_workers=4
+    )
+    
+    global_transfers.clear()  # Clear before next scrape
+    PARAMS['contract_address'] = CONTRACT_ADDRESS
+    # Run with 4 threads for example (adjust num_workers based on your API tier capacity)
+    scrape_multithreaded(
+        URL=URL_TRC20.replace("_RELATED_ADDRESS_", HOT_WALLETS[service]),
+        RELATED_ADDRESS = HOT_WALLETS[service], 
+        HEADER = HEADER,  
+        PARAMS= PARAMS,
+        file_name=f"{file_name}_trc20", 
+        min_timestamp=min_ts, 
+        max_timestamp=max_ts,
+        num_workers=4
+    )
+    
 
-HEADERS = {
-    "Accept": "application/json",
-    "TRON-PRO-API-KEY": TRONGRID_API_KEY 
-}
-
-def scrape_trongrid_unlimited():
-    os.makedirs("data/raw", exist_ok=True)
-    all_transfers = []
-    min_timestamp = datetime(2023, 1, 1).timestamp() * 1000  # Mốc thời gian cũ để bắt đầu
-    max_timestamp = datetime(2023, 12,31,23,59,59).timestamp() * 1000  # Mốc thời gian cũ để bắt đầu  # Mốc thời gian hiện tại
-    # Param ban đầu của TronGrid
-    params = {
-        "limit": 200, # TronGrid cho phép lấy tối đa 200 txs mỗi lần
-        "order_by": "block_timestamp,asc", # Sắp xếp từ mới nhất đến cũ nhất 
-        "contract_address": CONTRACT_ADDRESS,
-        "only_confirmed": "true",
-        "min_timestamp": int(min_timestamp),
-        "max_timestamp": int(max_timestamp)
-    }
-
-    print(f"🚀 BẮT ĐẦU VÉT CẠN VÍ BẰNG TRONGRID: {RELATED_ADDRESS}")
-    fingerprint = None
-    page = 1
-
-    try:
-        while True:
-            # Nếu có fingerprint từ lần gọi trước, ném vào params để lật trang
-            if fingerprint:
-                params["fingerprint"] = fingerprint
-
-            response = requests.get(URL, headers=HEADERS, params=params)
-            
-            # Xử lý Rate Limit
-            if response.status_code == 429:
-                print("⚠️ Bị Rate Limit! Nghỉ 5s...")
-                time.sleep(5)
-                continue
-                
-            response.raise_for_status()
-            data = response.json()
-            
-            # Lấy data giao dịch
-            transfers = data.get("data", [])
-            if not transfers:
-                print("\n🎉 ĐÃ VÉT SẠCH! Không còn giao dịch nào trong ví này nữa.")
-                break
-                
-            all_transfers.extend(transfers)
-            
-            # In log xem tiến độ
-            oldest_time = datetime.fromtimestamp(transfers[-1]['block_timestamp'] / 1000).strftime('%Y-%m-%d %H:%M:%S')
-            print(f"Trang {page}: Kéo thành công {len(transfers)} txs. Tổng: {len(all_transfers)} | Lùi về mốc: {oldest_time}")
-            
-            # Lấy fingerprint (chìa khóa lật trang) cho vòng lặp tiếp theo
-            meta = data.get("meta", {})
-            fingerprint = meta.get("fingerprint")
-            
-            # BƯỚC NGOẶT: Nếu API không trả về fingerprint nữa, nghĩa là đã chạm đáy ví
-            if not fingerprint:
-                print("\n✅ ĐÃ CHẠM ĐÁY VÍ (HẾT FINGERPRINT)!")
-                break
-                
-            page += 1
-            time.sleep(0.5) # Sleep nửa giây để bảo vệ API key
-
-    except KeyboardInterrupt:
-        print("\n🛑 [WARNING] Phát hiện Ctrl+C! Dừng khẩn cấp và chuẩn bị lưu file...")
-    except Exception as e:
-        print(f"\n❌ Lỗi API: {e}")
-
-    finally:
-        # Cơ chế an toàn: Luôn lưu file dù chạy xong hay bị dừng giữa chừng
-        if all_transfers:
-            final_file = f"data/raw/trongrid_{RELATED_ADDRESS[:8]}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-            with open(final_file, "w", encoding="utf-8") as f:
-                json.dump(all_transfers, f, indent=4, ensure_ascii=False)
-            print(f"\n🎉 QUÁ TRÌNH KẾT THÚC! Đã lưu an toàn {len(all_transfers)} giao dịch vào {final_file}")
-        else:
-            print("\n⚠️ Không có dữ liệu nào được thu thập.")
-            sys.exit(0)
-
-if __name__ == "__main__":
-    scrape_trongrid_unlimited()
+        
+    
+        
+    
+    
+    
+    
