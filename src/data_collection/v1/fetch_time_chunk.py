@@ -7,14 +7,12 @@ from src.utils.configs import TRONGRID_API, chunk_transfers, global_transfers, d
 from src.utils.helper import safe_print
 
 
-def fetch_time_chunk(chunk_id, min_ts, max_ts, file_name, URL, HEADERS, PARAMS):
+def fetch_time_chunk(chunk_id, min_ts, max_ts,file_name,URL, HEADERS, PARAMS):
     """
     Worker function: Scrapes TronGrid for a specific time window.
     """
-    # CHÚ Ý LỚN: Biến này phải là biến cục bộ để Thread tự đếm số lượng của riêng nó
-    chunk_transfers = [] 
 
-    # Tránh việc tham chiếu chéo (mutate shared variable)
+    params = PARAMS.copy()  # Avoid mutating shared PARAMS
     params = copy.deepcopy(PARAMS)
     params["min_timestamp"] = int(min_ts)
     params["max_timestamp"] = int(max_ts)
@@ -22,7 +20,9 @@ def fetch_time_chunk(chunk_id, min_ts, max_ts, file_name, URL, HEADERS, PARAMS):
     start_date_str = datetime.fromtimestamp(min_ts/1000).strftime('%Y-%m-%d')
     end_date_str = datetime.fromtimestamp(max_ts/1000).strftime('%Y-%m-%d')
     
-    safe_print(f"🧵 [Task {chunk_id}] Started: {start_date_str} to {end_date_str}", f"{file_name}.log")
+    
+
+    safe_print(f"🧵 [Thread {chunk_id}] Started: {start_date_str} to {end_date_str}", f"{file_name}.log")
 
     fingerprint = None
     page = 1
@@ -36,8 +36,8 @@ def fetch_time_chunk(chunk_id, min_ts, max_ts, file_name, URL, HEADERS, PARAMS):
             
             # Handle Rate Limit
             if response.status_code == 429:
-                safe_print(f"⚠️ [Task {chunk_id}] Rate Limit hit! Sleeping for 5s...", f"{file_name}.log")
-                time.sleep(5) # Đồng bộ với log
+                safe_print(f"⚠️ [Thread {chunk_id}] Rate Limit hit! Sleeping for 5s...")
+                time.sleep(1)
                 continue
                 
             response.raise_for_status()
@@ -49,16 +49,18 @@ def fetch_time_chunk(chunk_id, min_ts, max_ts, file_name, URL, HEADERS, PARAMS):
                 
             chunk_transfers.extend(transfers)
             
+            
             # Safely append to global list
             with data_lock:
                 global_transfers.extend(transfers)
                 
+            
             # Extract fingerprint
             meta = data.get("meta", {})
             fingerprint = meta.get("fingerprint")
             
             current_time_reached = datetime.fromtimestamp(transfers[-1]['block_timestamp'] / 1000).strftime('%Y-%m-%d %H:%M:%S')
-            safe_print(f"   ↳ [Task {chunk_id}] Page {page} | Got {len(transfers)} txs | Reached: {current_time_reached}", f"{file_name}.log")
+            safe_print(f"   ↳ [Thread {chunk_id}] Page {page} | Got {len(transfers)} txs | Reached: {current_time_reached}", f"{file_name}.log")
             
             if not fingerprint:
                 break
@@ -67,12 +69,10 @@ def fetch_time_chunk(chunk_id, min_ts, max_ts, file_name, URL, HEADERS, PARAMS):
             time.sleep(0.5) # Protect API Key
 
     except Exception as e:
-        safe_print(f"❌ [Task {chunk_id}] API Error: {e}", f"{file_name}.log")
+        safe_print(f"❌ [Thread {chunk_id}] API Error: {e}")
 
-    # Final status log for this thread chunk
+    # Final status log for this thread
     if stop_event.is_set():
-        safe_print(f"🛑 [Task {chunk_id}] Stopped early! Collected {len(chunk_transfers)} txs.", f"{file_name}.log")
+        safe_print(f"🛑 [Thread {chunk_id}] Stopped early! Collected {len(chunk_transfers)} txs.", f"{file_name}.log")
     else:
-        # Nếu không thu được tx nào, in nhẹ nhàng để đỡ rối log
-        if len(chunk_transfers) > 0:
-            safe_print(f"✅ [Task {chunk_id}] Finished {start_date_str}! Collected {len(chunk_transfers)} txs.", f"{file_name}.log")
+        safe_print(f"✅ [Thread {chunk_id}] Finished! Collected {len(chunk_transfers)} txs.", f"{file_name}.log")
