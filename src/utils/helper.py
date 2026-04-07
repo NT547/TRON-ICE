@@ -115,22 +115,9 @@ def parse_trx(tx):
 
     except Exception:
         return None
-    
-def proccess_raw_data(file_name):
-    if os.path.exists(f"data/raw/{file_name}_trx.json"):
-        with open(f'data/raw/{file_name}_trx.json', 'r', encoding='utf-8') as file:
-            data = json.load(file)
-            data_processed = []
-            for tx in data:
-                data_processed.append(parse_trx(tx))
-            pd.DataFrame(data_processed).to_csv(f"data/processed/{file_name}_trx.csv", index=False)
-            print(f"💾 Saved CSV: data/processed/{file_name}_trx.csv")
-
-    if os.path.exists(f"data/raw/{file_name}_trc20.json"):
-        with open(f'data/raw/{file_name}_trc20.json', 'r', encoding='utf-8') as file:
-            data = json.load(file)
-            data_processed = []
-            for tx in data:
-                data_processed.append(parse_trc20(tx))
-            pd.DataFrame(data_processed).to_csv(f"data/processed/{file_name}_trc20.csv", index=False)
-            print(f"💾 Saved CSV: data/processed/{file_name}_trc20.csv")
+            
+def save_json(file_name,data):
+    final_file = f"{file_name}.json"
+    with open(final_file, "w", encoding="utf-8") as f:  
+        json.dump(data, f, indent=2, ensure_ascii=False)
+        print(f"Data is successfully saved in {file_name}")

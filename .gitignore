@@ -2,5 +2,5 @@
 .venv
 notebooks/note.txt
 *data/*
-*result/*
+*results/*
 __pycache__/
