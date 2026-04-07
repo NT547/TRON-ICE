@@ -2,7 +2,7 @@ import os
 import pandas as pd
 import ijson
 import glob
-from src.utils.helper import parse_trc20,parse_trx
+from src.processing.parser import parse_trc20, parse_trx
 def exact_json_to_csv(file_dir):
     if not os.path.exists(file_dir):
         return
