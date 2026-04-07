@@ -1,7 +1,13 @@
 *.env*
 .venv
 notebooks/note.txt
+<<<<<<< HEAD
 __pycache__/
 results/
 data/
 cache/
+=======
+*data/*
+*results/*
+__pycache__/
+>>>>>>> ee15cc5 (excluding folder data)
