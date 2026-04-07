@@ -1,5 +1,6 @@
 *.env*
 .venv
 notebooks/note.txt
-data/*
+*data/*
+*result/*
 __pycache__/
