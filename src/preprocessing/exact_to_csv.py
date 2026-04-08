@@ -3,7 +3,9 @@ import pandas as pd
 import ijson
 import glob
 from src.processing.parser import parse_trc20, parse_trx
+from src.utils.configs import HOT_WALLETS
 def exact_json_to_csv(file_dir):
+    
     if not os.path.exists(file_dir):
         return
 
@@ -21,15 +23,21 @@ def exact_json_to_csv(file_dir):
 
     with open(file_dir, 'r', encoding='utf-8') as file:
         for tx in ijson.items(file, 'item'):
+            for service, wallets in HOT_WALLETS.items():
+                if service in file_name:
+                    parsed = parse_trx(tx)
+                    if parsed:
+                        parsed['service'] = service
+                        batch_trx.append(parsed)
 
-            trx = parse_trx(tx)
-            if trx:
-                batch_trx.append(trx)
-
-            trc20 = parse_trc20(tx)
-            if trc20:
-                batch_trc20.append(trc20)
-
+                    parsed = parse_trc20(tx)
+                    if parsed:
+                        parsed['service'] = service
+                        batch_trc20.append(parsed)
+            
+            
+            
+                    
             # ghi batch
             if len(batch_trx) >= batch_size:
                 pd.DataFrame(batch_trx).to_csv(
