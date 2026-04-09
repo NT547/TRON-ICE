@@ -4,7 +4,7 @@ import glob
 from typing import Iterator, Dict, Any
 
 # Đã bỏ HOT_WALLETS, chỉ giữ lại các tham số cấu hình thuật toán
-from config import TIME_WINDOW, VALUE_THRESHOLD
+from src.config import TIME_WINDOW, VALUE_THRESHOLD
 
 # ==========================================
 # CÁC HÀM TIỆN ÍCH (UTILITY FUNCTIONS)
@@ -144,7 +144,7 @@ def process_file_pair(dep_file: str, wit_file: str, service_name: str, output_di
 # ENTRY POINT
 # ==========================================
 
-def main(input_dir: str = "data/classified", output_dir: str = "data/matched"):
+def matching(input_dir: str = "data/classified", output_dir: str = "data/matched"):
     if not os.path.exists(input_dir):
         print(f"❌ Thư mục {input_dir} không tồn tại!")
         return
@@ -166,7 +166,3 @@ def main(input_dir: str = "data/classified", output_dir: str = "data/matched"):
         
         # Chạy thuật toán cho cặp file này
         process_file_pair(dep_file, wit_file, service_name, output_dir)
-
-if __name__ == "__main__":
-    # Bạn có thể truyền đường dẫn custom ở đây nếu muốn
-    main(input_dir="data/classified", output_dir="data/matched")
