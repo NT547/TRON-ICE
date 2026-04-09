@@ -8,21 +8,40 @@ from src.config import HOT_WALLETS
 
 def identify_operations(chunk: pd.DataFrame):
     chunk = chunk.copy()
-    chunk["to"] = chunk["to"].str.lower()
-    chunk["from"] = chunk["from"].str.lower()
 
-    # flatten wallet → service
-    wallet_to_service = {}
-    for service, wallets in HOT_WALLETS.items():
-        for wallet in wallets:
-            wallet_to_service[wallet.lower()] = service
+    # 1. Tự động nhận diện cột địa chỉ (TRX thường dùng to_address/owner_address)
+    col_from = "from" if "from" in chunk.columns else "owner_address"
+    col_to = "to" if "to" in chunk.columns else "to_address"
 
-    # map trực tiếp
-    to_service = chunk["to"].map(wallet_to_service)
-    from_service = chunk["from"].map(wallet_to_service)
+    if col_from not in chunk.columns or col_to not in chunk.columns:
+        return pd.DataFrame(), pd.DataFrame()
 
-    deposits = chunk[chunk["service"] == to_service]
-    withdrawals = chunk[chunk["service"] == from_service]
+    # 2. Ép kiểu và chuẩn hóa
+    chunk[col_to] = chunk[col_to].astype(str).str.lower()
+    chunk[col_from] = chunk[col_from].astype(str).str.lower()
+
+    # 3. Tạo map từ Hot Wallets
+    wallet_to_service = {
+        wallet.lower(): service 
+        for service, wallets in HOT_WALLETS.items() 
+        for wallet in wallets
+    }
+
+    # 4. Map địa chỉ
+    to_service = chunk[col_to].map(wallet_to_service)
+    from_service = chunk[col_from].map(wallet_to_service)
+
+    # 5. Phân loại
+    deposits = chunk[to_service.notna()].copy()
+    deposits["service"] = to_service[to_service.notna()]
+    # Gán lại cột to/from thống nhất để dễ gộp file sau này
+    deposits["from_addr"] = chunk[col_from]
+    deposits["to_addr"] = chunk[col_to]
+
+    withdrawals = chunk[from_service.notna()].copy()
+    withdrawals["service"] = from_service[from_service.notna()]
+    withdrawals["from_addr"] = chunk[col_from]
+    withdrawals["to_addr"] = chunk[col_to]
 
     return deposits, withdrawals
 
@@ -32,16 +51,24 @@ def classify(csv_direction=None, classified_direction=None, pattern=None):
     classified_direction = (
         "data/classified/" if classified_direction is None else classified_direction
     )
-    pattern = "*_trc20*.csv" if pattern is None else pattern
+    pattern = "*.csv" if pattern is None else pattern
 
     # Checking and creating directory
     os.makedirs(csv_direction, exist_ok=True)
     os.makedirs(classified_direction, exist_ok=True)
-
+    
+    #cleaning log file:
+    log_path = "result/logs/processing"
+    os.makedirs(log_path, exist_ok=True)
+    log_file = f"{log_path}/classified.log"
+    with open(log_file,'w') as file:
+        file.close()
     try:
         csv_path = f"data/processed/"
         csv_files = glob.glob(os.path.join(csv_path, pattern))
-
+        deposits_chunk = []
+        withdrawals_chunk = []
+        message = str
         for csv_file in csv_files:
             # Exacting file name
             file_name = str(os.path.basename(csv_file))
@@ -56,8 +83,7 @@ def classify(csv_direction=None, classified_direction=None, pattern=None):
             transaction_chunks = pd.read_csv(csv_file, chunksize=10000)
 
             #
-            deposits_chunk = []
-            withdrawals_chunk = []
+            
             for transaction_chunk in transaction_chunks:
 
                 deposits_chunk, withdrawals_chunk = identify_operations(
@@ -86,13 +112,9 @@ def classify(csv_direction=None, classified_direction=None, pattern=None):
 
             print(message)
 
-            log_path = "result/logs/processing"
-            os.makedirs(log_path, exist_ok=True)
-            log_file = f"{log_path}/classified.log"
+            
 
-            #cleaning log file:
-            with open(log_file,'w') as file:
-                file.close()
+            
             with open(log_file, "a", encoding="utf-8") as file:
                 file.write(message)
 
