@@ -8,7 +8,9 @@ load_dotenv()
 
 TRONGRID_API = "https://api.trongrid.io/v1/accounts"
 
+
 TRONGRID_API_KEY = os.getenv("TRONGRID_API_KEY")
+COINGECKO_API_KEY = os.getenv("COINGECKO_API_KEY")
 
 HOT_WALLETS = {
     "fixedfloat": "TBEkD71bkL7fNz2HuCeisRbtvwwT2JWaMr",
