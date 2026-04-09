@@ -5,7 +5,7 @@ import glob
 from src.processing.parser import parse_trc20, parse_trx
 from src.utils.configs import HOT_WALLETS
 def exact_json_to_csv(file_dir):
-    
+    os.makedirs('data/processed/',exist_ok=True)
     if not os.path.exists(file_dir):
         return
 
