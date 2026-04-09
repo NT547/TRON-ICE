@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import argparse
 import json
 import logging
@@ -196,3 +197,11 @@ def main():
 
 if __name__ == "__main__":
     main()
+=======
+from src.identify_operations import classify
+from src.baseline_algorithm import matching
+
+if __name__ == "__main__":
+    # classify()
+    matching(input_dir="data/classified", output_dir="data/matched")
+>>>>>>> e927f18 (fixing encoding error for matching algorithm)
