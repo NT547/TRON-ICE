@@ -81,21 +81,10 @@ def main():
         help="Number of processes for parallel matching (default: 1)",
     )
     parser.add_argument(
-        "--coingecko_api_key",
-        type=str,
-        default=None,
-        help="CoinGecko API key for higher rate limits (optional)",
-    )
-    parser.add_argument(
         "--output_file",
         type=str,
         default=None,
         help="Custom output file for matched pairs. Defaults to results/matched/matched_pairs_{service}_{year}.json",
-    )
-    parser.add_argument(
-        "--save_alias_output",
-        action="store_true",
-        help="Also save matched pairs to root-level matched_pairs.json for easy testing.",
     )
 
     args = parser.parse_args()
@@ -126,7 +115,7 @@ def main():
             year,
             args.cache_dir,
             args.num_processes,
-            args.coingecko_api_key,
+            None,
             args.bucket_minutes,
         )
 
@@ -172,7 +161,7 @@ def main():
             year,
             args.cache_dir,
             args.num_processes,
-            args.coingecko_api_key,
+            None,
             args.bucket_minutes,
         )
         save_matched_pairs(matches, matched_file)

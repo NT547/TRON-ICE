@@ -6,6 +6,7 @@ import requests
 import time
 from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional
+from src.utils.configs import COINGECKO_API_KEY
 
 COINGECKO_API = "https://api.coingecko.com/api/v3"
 BINANCE_API = "https://api.binance.com/api/v3"
@@ -38,6 +39,8 @@ def save_price_cache_file(cache_file: str, prices: Dict[int, float]) -> None:
 def fetch_coingecko_price_history(
     token: str, year: int, api_key: Optional[str] = None
 ) -> Dict[int, float]:
+    if api_key is None:
+        api_key = COINGECKO_API_KEY
     coin_id = TOKEN_CG_IDS.get(token, token.lower().replace(".", "-").replace("_", "-"))
     start_date = datetime(year, 1, 1)
     end_date = datetime(year, 12, 31)
@@ -160,6 +163,8 @@ def generate_stable_price_history(year: int) -> Dict[int, float]:
 def get_historical_prices(
     token: str, year: int, cache_dir: str = "cache", api_key: Optional[str] = None
 ) -> Dict[int, float]:
+    if api_key is None:
+        api_key = COINGECKO_API_KEY
     key = (token, year)
     if key in HISTORICAL_PRICE_CACHE:
         return HISTORICAL_PRICE_CACHE[key]
@@ -267,6 +272,8 @@ def calculate_usd_value(
     )
     timestamp = tx["timestamp"] // 1000
     actual_year = datetime.fromtimestamp(timestamp).year
+    if api_key is None:
+        api_key = COINGECKO_API_KEY
     price = get_price_at_timestamp(
         token,
         timestamp,

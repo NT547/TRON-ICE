@@ -199,7 +199,6 @@ def run_matching(
             for future in futures:
                 all_matches.extend(future.result())
 
-    # Chỉ log ra màn hình, không ghi file log match từng dòng json
     return all_matches
 
 
