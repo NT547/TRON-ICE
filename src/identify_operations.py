@@ -27,62 +27,74 @@ def identify_operations(chunk: pd.DataFrame):
     return deposits, withdrawals
 
 
-
-def classify(csv_direction = None, classified_direction = None, pattern = None):
+def classify(csv_direction=None, classified_direction=None, pattern=None):
     csv_direction = "data/processed/" if csv_direction is None else csv_direction
-    classified_direction = "data/classified/" if classified_direction is None else classified_direction
-    pattern = "*.csv" if pattern is None else pattern
-    
-    # Checking and creating directory 
+    classified_direction = (
+        "data/classified/" if classified_direction is None else classified_direction
+    )
+    pattern = "*_trc20*.csv" if pattern is None else pattern
+
+    # Checking and creating directory
     os.makedirs(csv_direction, exist_ok=True)
     os.makedirs(classified_direction, exist_ok=True)
-    
+
     try:
         csv_path = f"data/processed/"
-        csv_files = glob.glob(os.path.join(csv_path,pattern))
+        csv_files = glob.glob(os.path.join(csv_path, pattern))
 
-                
         for csv_file in csv_files:
-            #Exacting file name
+            # Exacting file name
             file_name = str(os.path.basename(csv_file))
-            file_name = file_name.removesuffix('.csv')
-            file_name = file_name.replace('trongrid_','')
-            
-            #file direction that saved deposits and withdrawals
+            file_name = file_name.removesuffix(".csv")
+            file_name = file_name.replace("trongrid_", "")
+
+            # file direction that saved deposits and withdrawals
             deposit_dir = f"data/classified/{file_name}_deposits.csv"
             withdrawals_dir = f"data/classified/{file_name}_withdrawals.csv"
-            
-            #load data by chunk
-            transaction_chunks = pd.read_csv(csv_file,chunksize=10000)
-            
+
+            # load data by chunk
+            transaction_chunks = pd.read_csv(csv_file, chunksize=10000)
+
             #
             deposits_chunk = []
             withdrawals_chunk = []
             for transaction_chunk in transaction_chunks:
-                
-                deposits_chunk, withdrawals_chunk = identify_operations(transaction_chunk)
-                deposits_chunk['transaction_type'] = 'deposit'
-                withdrawals_chunk['transaction_type'] = ' withdrawal'
-                
+
+                deposits_chunk, withdrawals_chunk = identify_operations(
+                    transaction_chunk
+                )
+                deposits_chunk["transaction_type"] = "deposit"
+                withdrawals_chunk["transaction_type"] = " withdrawal"
 
                 if not deposits_chunk.empty:
-                    deposits_chunk.to_csv(deposit_dir ,index=False, mode='a',header=not os.path.exists(deposit_dir))
+                    deposits_chunk.to_csv(
+                        deposit_dir,
+                        index=False,
+                        mode="a",
+                        header=not os.path.exists(deposit_dir),
+                    )
                 if not withdrawals_chunk.empty:
-                    withdrawals_chunk.to_csv(withdrawals_dir, index=False, mode='a',header=not os.path.exists(withdrawals_dir))
-             
-                    
-            #saving log
-            message = f"""Deposits: {len(deposits_chunk)}" 
-                        Withdrawals: {len(withdrawals_chunk)}
-                        💾 Deposits Saved in {deposit_dir}
-                        💾 Withdraw Saved in {withdrawals_dir}\n"""  
+                    withdrawals_chunk.to_csv(
+                        withdrawals_dir,
+                        index=False,
+                        mode="a",
+                        header=not os.path.exists(withdrawals_dir),
+                    )
+
+            # saving log
+            message = f"""Deposits: {len(deposits_chunk)} \nWithdrawals: {len(withdrawals_chunk)}\n💾 Deposits Saved in {deposit_dir}\n💾 Withdraw Saved in {withdrawals_dir}\n\n"""
+
             print(message)
+
             log_path = "result/logs/processing"
             os.makedirs(log_path, exist_ok=True)
-            log_file = f'{log_path}/classified.log'
-            with open (log_file,'w',encoding='utf-8') as file:
+            log_file = f"{log_path}/classified.log"
+
+            #cleaning log file:
+            with open(log_file,'w') as file:
+                file.close()
+            with open(log_file, "a", encoding="utf-8") as file:
                 file.write(message)
-                
+
     except FileNotFoundError:
         print(f"❌ File not found: {csv_path}")
-
