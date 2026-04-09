@@ -55,21 +55,34 @@ def classify(csv_direction = None, classified_direction = None, pattern = None):
             #load data by chunk
             transaction_chunks = pd.read_csv(csv_file,chunksize=10000)
             
+            #
+            deposits_chunk = []
+            withdrawals_chunk = []
             for transaction_chunk in transaction_chunks:
-                print([repr(col) for col in transaction_chunk.columns])
+                
                 deposits_chunk, withdrawals_chunk = identify_operations(transaction_chunk)
                 deposits_chunk['transaction_type'] = 'deposit'
                 withdrawals_chunk['transaction_type'] = ' withdrawal'
                 
-                print(f"Deposits: {len(deposits_chunk)}")
-                print(f"Withdrawals: {len(withdrawals_chunk)}")
+
                 if not deposits_chunk.empty:
                     deposits_chunk.to_csv(deposit_dir ,index=False, mode='a',header=not os.path.exists(deposit_dir))
                 if not withdrawals_chunk.empty:
                     withdrawals_chunk.to_csv(withdrawals_dir, index=False, mode='a',header=not os.path.exists(withdrawals_dir))
-
-            print(f"💾 Deposits Saved in {deposit_dir}\n")
-            print(f"💾 Withdraw Saved in {withdrawals_dir}\n")
+             
+                    
+            #saving log
+            message = f"""Deposits: {len(deposits_chunk)}" 
+                        Withdrawals: {len(withdrawals_chunk)}
+                        💾 Deposits Saved in {deposit_dir}
+                        💾 Withdraw Saved in {withdrawals_dir}\n"""  
+            print(message)
+            log_path = "result/logs/processing"
+            os.makedirs(log_path, exist_ok=True)
+            log_file = f'{log_path}/classified.log'
+            with open (log_file,'w',encoding='utf-8') as file:
+                file.write(message)
+                
     except FileNotFoundError:
         print(f"❌ File not found: {csv_path}")
 
