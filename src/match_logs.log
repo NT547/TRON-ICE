@@ -1,0 +1,18 @@
+
+=== PROCESSING SERVICE: fixedfloat ===
+   - Loaded deposits: 17574
+   - Loaded withdrawals: 12426
+   ✅ Matches found: 886
+   💾 Saved to: data/matched/fixedfloat_matches.csv
+
+=== PROCESSING SERVICE: changenow ===
+   - Loaded deposits: 17882
+   - Loaded withdrawals: 12118
+   ✅ Matches found: 4443
+   💾 Saved to: data/matched/changenow_matches.csv
+
+=== PROCESSING SERVICE: sideshift ===
+   - Loaded deposits: 14444
+   - Loaded withdrawals: 15550
+   ✅ Matches found: 661
+   💾 Saved to: data/matched/sideshift_matches.csv

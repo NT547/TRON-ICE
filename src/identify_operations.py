@@ -2,52 +2,74 @@
 # Ghi các file phân loại vào thư mục data/classified/{service}_deposits.csv và {service}_withdrawals.csv
 import pandas as pd
 import os
-from config import HOT_WALLETS
+import glob
+from src.config import HOT_WALLETS
 
 
-def identify_operations(df, wallets):
-    all_deposits = []
-    all_withdrawals = []
+def identify_operations(chunk: pd.DataFrame):
+    chunk = chunk.copy()
+    chunk["to"] = chunk["to"].str.lower()
+    chunk["from"] = chunk["from"].str.lower()
 
-    for hot_wallet in wallets:
-        hot_wallet = hot_wallet.lower()
+    # flatten wallet → service
+    wallet_to_service = {}
+    for service, wallets in HOT_WALLETS.items():
+        for wallet in wallets:
+            wallet_to_service[wallet.lower()] = service
 
-        d = df[df["to"].str.lower() == hot_wallet]
-        w = df[df["from"].str.lower() == hot_wallet]
+    # map trực tiếp
+    to_service = chunk["to"].map(wallet_to_service)
+    from_service = chunk["from"].map(wallet_to_service)
 
-        all_deposits.append(d)
-        all_withdrawals.append(w)
-
-    deposits = pd.concat(all_deposits, ignore_index=True)
-    withdrawals = pd.concat(all_withdrawals, ignore_index=True)
+    deposits = chunk[chunk["service"] == to_service]
+    withdrawals = chunk[chunk["service"] == from_service]
 
     return deposits, withdrawals
 
 
-def main():
-    os.makedirs("data/processed", exist_ok=True)
 
-    for service, wallets in HOT_WALLETS.items():
-        print(f"\n=== SERVICE: {service} ===")
+def classify(csv_direction = None, classified_direction = None, pattern = None):
+    csv_direction = "data/processed/" if csv_direction is None else csv_direction
+    classified_direction = "data/classified/" if classified_direction is None else classified_direction
+    pattern = "*.csv" if pattern is None else pattern
+    
+    # Checking and creating directory 
+    os.makedirs(csv_direction, exist_ok=True)
+    os.makedirs(classified_direction, exist_ok=True)
+    
+    try:
+        csv_path = f"data/processed/"
+        csv_files = glob.glob(os.path.join(csv_path,pattern))
 
-        file_path = f"data/processed/tron/{service}_processed.csv"
+                
+        for csv_file in csv_files:
+            #Exacting file name
+            file_name = str(os.path.basename(csv_file))
+            file_name = file_name.removesuffix('.csv')
+            file_name = file_name.replace('trongrid_','')
+            
+            #file direction that saved deposits and withdrawals
+            deposit_dir = f"data/classified/{file_name}_deposits.csv"
+            withdrawals_dir = f"data/classified/{file_name}_withdrawals.csv"
+            
+            #load data by chunk
+            transaction_chunks = pd.read_csv(csv_file,chunksize=10000)
+            
+            for transaction_chunk in transaction_chunks:
+                print([repr(col) for col in transaction_chunk.columns])
+                deposits_chunk, withdrawals_chunk = identify_operations(transaction_chunk)
+                deposits_chunk['transaction_type'] = 'deposit'
+                withdrawals_chunk['transaction_type'] = ' withdrawal'
+                
+                print(f"Deposits: {len(deposits_chunk)}")
+                print(f"Withdrawals: {len(withdrawals_chunk)}")
+                if not deposits_chunk.empty:
+                    deposits_chunk.to_csv(deposit_dir ,index=False, mode='a',header=not os.path.exists(deposit_dir))
+                if not withdrawals_chunk.empty:
+                    withdrawals_chunk.to_csv(withdrawals_dir, index=False, mode='a',header=not os.path.exists(withdrawals_dir))
 
-        if not os.path.exists(file_path):
-            print(f"❌ File not found: {file_path}")
-            continue
+            print(f"💾 Deposits Saved in {deposit_dir}\n")
+            print(f"💾 Withdraw Saved in {withdrawals_dir}\n")
+    except FileNotFoundError:
+        print(f"❌ File not found: {csv_path}")
 
-        df = pd.read_csv(file_path)
-
-        deposits, withdrawals = identify_operations(df, wallets)
-
-        print(f"Deposits: {len(deposits)}")
-        print(f"Withdrawals: {len(withdrawals)}")
-
-        deposits.to_csv(f"data/classified/{service}_deposits.csv", index=False)
-        withdrawals.to_csv(f"data/classified/{service}_withdrawals.csv", index=False)
-
-        print("💾 Saved deposits & withdrawals")
-
-
-if __name__ == "__main__":
-    main()
