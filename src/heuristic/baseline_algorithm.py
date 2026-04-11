@@ -4,7 +4,7 @@ import glob
 from typing import Iterator, Dict, Any
 
 # Đã bỏ HOT_WALLETS, chỉ giữ lại các tham số cấu hình thuật toán
-from src.config import TIME_WINDOW, VALUE_THRESHOLD
+from src.utils.configs import TIME_WINDOW, VALUE_THRESHOLD
 
 # ==========================================
 # CÁC HÀM TIỆN ÍCH (UTILITY FUNCTIONS)
