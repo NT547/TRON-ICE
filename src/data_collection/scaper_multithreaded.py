@@ -7,11 +7,10 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from src.utils.configs import stop_event
 from src.data_collection.fetch_time_chunk import fetch_time_chunk, global_transfers
 
-
 def scrape_multithreaded(URL, RELATED_ADDRESS, HEADER, PARAMS, file_name="trongrid_multithread", min_timestamp=None, max_timestamp=None, num_workers=5):
     os.makedirs("data/raw", exist_ok=True)
     
-    # Set default timestamps if not provided
+    # Mặc định thời gian nếu không truyền vào
     if min_timestamp is None:
         min_timestamp = datetime(2023, 1, 1).timestamp() * 1000
     if max_timestamp is None:
