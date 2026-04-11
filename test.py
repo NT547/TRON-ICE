@@ -1,3 +1,4 @@
+
 import pandas as pd
 import copy
 import json
@@ -17,3 +18,4 @@ with open(f'data/raw/{file_name}_trx.json', 'r', encoding='utf-8') as file:
             data_processed.append(parsed)
 pd.DataFrame(data_processed).to_csv(f"data/processed/{file_name}_trx.csv", index=False)
 print(f"💾 Saved CSV: data/processed/{file_name}_trx.csv")
+
