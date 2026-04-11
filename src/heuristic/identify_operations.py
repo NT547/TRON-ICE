@@ -3,7 +3,7 @@
 import pandas as pd
 import os
 import glob
-from src.config import HOT_WALLETS
+from src.utils.configs import HOT_WALLETS
 
 
 def identify_operations(chunk: pd.DataFrame):
