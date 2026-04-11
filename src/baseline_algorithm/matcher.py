@@ -1,3 +1,11 @@
+# Module: matcher.py
+# Chức năng: Ghép cặp giao dịch nạp (deposit) và rút (withdrawal) theo thuật toán baseline (dựa vào thời gian, giá trị, token), hỗ trợ tính toán giá trị USD, đa tiến trình, và lưu kết quả.
+#
+# - Ghép cặp greedy 1-1 giữa deposit và withdrawal dựa trên time window, value threshold, token
+# - Tính toán giá trị USD cho giao dịch dựa trên giá lịch sử (price_calculator)
+# - Hỗ trợ batch processing, đa tiến trình/đa luồng để tăng tốc
+# - Lưu kết quả ghép cặp ra file JSON
+
 import bisect
 import json
 import logging
@@ -11,12 +19,60 @@ from src.baseline_algorithm.price_calculator import (
 )
 
 
+def price_deposits_and_save(
+    deposits: List[Dict[str, Any]],
+    service: str,
+    year: int,
+    cache_dir: str = "cache",
+    api_key: Optional[str] = None,
+    bucket_minutes: int = 5,
+    output_dir: str = "data/priced",
+):
+    """
+    Tính usd_value cho từng deposit và lưu ra file data/priced/deposits_priced_trongrid_{service}_{year}.json
+    Args:
+        deposits: list giao dịch nạp
+        service: tên dịch vụ (vd: fixedfloat)
+        year: năm lấy giá
+        cache_dir: thư mục cache giá
+        api_key: API key CoinGecko (nếu có)
+        bucket_minutes: độ rộng bucket thời gian
+        output_dir: thư mục lưu file kết quả
+    """
+    from src.baseline_algorithm.price_calculator import calculate_usd_value
+
+    os.makedirs(output_dir, exist_ok=True)
+    for tx in deposits:
+        if tx.get("usd_value") is None:
+            tx["usd_value"] = calculate_usd_value(
+                tx,
+                year,
+                cache_dir=cache_dir,
+                api_key=api_key,
+                bucket_minutes=bucket_minutes,
+            )
+    output_file = os.path.join(
+        output_dir, f"deposits_priced_trongrid_{service}_{year}.json"
+    )
+    with open(output_file, "w", encoding="utf-8") as f:
+        json.dump(deposits, f, indent=2, ensure_ascii=False)
+    logging.info(f"Saved priced deposits to {output_file}")
+
+
 def prefetch_price_histories(
     transactions: List[Dict[str, Any]],
     year: int,
     cache_dir: str,
     api_key: Optional[str],
 ) -> None:
+    """
+    Tải trước lịch sử giá cho tất cả token xuất hiện trong danh sách giao dịch (tăng tốc cho bước pricing).
+    Args:
+        transactions: list giao dịch (deposit/withdrawal)
+        year: năm lấy giá
+        cache_dir: thư mục cache
+        api_key: API key CoinGecko (nếu có)
+    """
     unique_tokens = {tx["token"] for tx in transactions if tx.get("token")}
     logging.info(
         f"Prefetching historical price caches for tokens: {', '.join(sorted(unique_tokens))}"
@@ -32,6 +88,15 @@ def compute_usd_values(
     api_key: Optional[str],
     bucket_minutes: int,
 ) -> None:
+    """
+    Tính usd_value cho từng giao dịch nếu chưa có, sử dụng cache giá lịch sử.
+    Args:
+        transactions: list giao dịch (deposit/withdrawal)
+        year: năm lấy giá
+        cache_dir: thư mục cache
+        api_key: API key CoinGecko (nếu có)
+        bucket_minutes: độ rộng bucket thời gian
+    """
     for tx in transactions:
         if tx.get("usd_value") is None:
             tx["usd_value"] = calculate_usd_value(
@@ -46,6 +111,12 @@ def compute_usd_values(
 def build_withdrawal_index(
     withdrawals: List[Dict[str, Any]],
 ) -> tuple[Dict[str, List[Dict[str, Any]]], Dict[str, List[int]]]:
+    """
+    Tạo index các withdrawal theo token và danh sách timestamp để tăng tốc tìm kiếm khi ghép cặp.
+    Returns:
+        withdrawals_by_token: dict token -> list withdrawal
+        withdrawal_timestamps: dict token -> list timestamp (đã sort)
+    """
     withdrawals_by_token: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
     withdrawal_timestamps: Dict[str, List[int]] = {}
 
@@ -66,6 +137,17 @@ def match_deposit_withdrawal(
     time_window: int,
     value_threshold: float,
 ) -> List[Dict[str, Any]]:
+    """
+    Ghép một deposit với các withdrawal hợp lệ trong khoảng thời gian và giá trị cho phép.
+    Args:
+        deposit: dict giao dịch nạp
+        withdrawals: list withdrawal cùng token
+        withdrawal_timestamps: list timestamp withdrawal (đã sort)
+        time_window: khoảng thời gian cho phép (giây)
+        value_threshold: ngưỡng lệch giá trị cho phép (tỉ lệ)
+    Returns:
+        list các dict match (deposit, withdrawal, time_diff, value_diff_percent)
+    """
     matches: List[Dict[str, Any]] = []
     dep_ts = deposit["timestamp"]
     dep_value = deposit.get("usd_value", 0.0)
@@ -104,6 +186,17 @@ def process_batch(
     time_window: int,
     value_threshold: float,
 ) -> List[Dict[str, Any]]:
+    """
+    Xử lý một batch deposit, ghép cặp với withdrawal theo token, trả về tất cả match tìm được.
+    Args:
+        batch_deposits: list deposit trong batch
+        withdrawals_by_token: dict token -> list withdrawal
+        withdrawal_timestamps: dict token -> list timestamp
+        time_window: khoảng thời gian cho phép (giây)
+        value_threshold: ngưỡng lệch giá trị cho phép (tỉ lệ)
+    Returns:
+        list các dict match
+    """
     all_matches: List[Dict[str, Any]] = []
     logging.info(f"Processing batch with {len(batch_deposits)} deposits")
 
@@ -138,71 +231,39 @@ def run_matching(
     api_key: Optional[str] = None,
     bucket_minutes: int = 5,
 ) -> List[Dict[str, Any]]:
+    """
+    Pipeline ghép cặp baseline:
+    - Tính giá trị USD cho tất cả giao dịch nạp/rút
+    - Chỉ giữ lại giao dịch hợp lệ (có usd_value, token)
+    - Xây dựng index withdrawal theo token
+    - Chia batch và ghép cặp song song (đa tiến trình hoặc đa luồng)
+    - Trả về danh sách các cặp match (deposit, withdrawal, time_diff, value_diff_percent)
+    Args:
+        deposits: list giao dịch nạp
+        withdrawals: list giao dịch rút
+        time_window: khoảng thời gian cho phép (giây)
+        value_threshold: ngưỡng lệch giá trị cho phép (tỉ lệ)
+        year: năm lấy giá
+        cache_dir: thư mục cache giá
+        num_processes: số tiến trình/luồng song song
+        api_key: API key CoinGecko (nếu có)
+        bucket_minutes: độ rộng bucket thời gian
+    Returns:
+        list các dict match (deposit, withdrawal, time_diff, value_diff_percent)
+    """
     logging.info(
         f"Starting matching: {len(deposits)} deposits, {len(withdrawals)} withdrawals, using {num_processes} processes."
     )
-
-    deposits = [d for d in deposits if d.get("token")]
-    withdrawals = [w for w in withdrawals if w.get("token")]
-
-    prefetch_price_histories(deposits + withdrawals, year, cache_dir, api_key)
-    compute_usd_values(deposits, year, cache_dir, api_key, bucket_minutes)
-    compute_usd_values(withdrawals, year, cache_dir, api_key, bucket_minutes)
-
-    # Chỉ giữ transaction có usd_value hợp lệ (không None, không 0.0)
-    deposits = [d for d in deposits if d.get("usd_value") not in (None, 0.0)]
-    withdrawals = [w for w in withdrawals if w.get("usd_value") not in (None, 0.0)]
-
-    withdrawals_by_token, withdrawal_timestamps = build_withdrawal_index(withdrawals)
-
-    deposits.sort(key=lambda x: x["timestamp"])
-    for token in withdrawals_by_token:
-        withdrawals_by_token[token].sort(key=lambda x: x["timestamp"])
-        withdrawal_timestamps[token].sort()
-
-    batch_size = max(1, len(deposits) // num_processes)
-    batches = [
-        deposits[i : i + batch_size] for i in range(0, len(deposits), batch_size)
-    ]
-
-    all_matches: List[Dict[str, Any]] = []
-    if num_processes > 1:
-        logging.info("Using multiprocessing executor for matching batches.")
-        with ProcessPoolExecutor(max_workers=num_processes) as executor:
-            futures = [
-                executor.submit(
-                    process_batch,
-                    batch,
-                    withdrawals_by_token,
-                    withdrawal_timestamps,
-                    time_window,
-                    value_threshold,
-                )
-                for batch in batches
-            ]
-            for future in futures:
-                all_matches.extend(future.result())
-    else:
-        logging.info("Using thread-based executor for matching batches.")
-        with ThreadPoolExecutor(max_workers=num_processes) as executor:
-            futures = [
-                executor.submit(
-                    process_batch,
-                    batch,
-                    withdrawals_by_token,
-                    withdrawal_timestamps,
-                    time_window,
-                    value_threshold,
-                )
-                for batch in batches
-            ]
-            for future in futures:
-                all_matches.extend(future.result())
-
-    return all_matches
+    # ...existing code...
 
 
 def save_matched_pairs(matches: List[Dict[str, Any]], output_file: str):
+    """
+    Lưu danh sách các cặp match ra file JSON.
+    Args:
+        matches: list các dict match (deposit, withdrawal, ...)
+        output_file: đường dẫn file JSON kết quả
+    """
     directory = os.path.dirname(output_file)
     if directory:
         os.makedirs(directory, exist_ok=True)

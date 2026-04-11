@@ -1,3 +1,6 @@
+# Module: transaction_classifier.py
+# Chức năng: Lọc nhiễu, phân loại giao dịch đã chuẩn hóa thành nạp (deposit) và rút (withdrawal), lưu kết quả ra file.
+
 import json
 import os
 from typing import List, Dict, Any
@@ -6,6 +9,9 @@ from .data_normalizer import normalize_transactions_from_files
 
 
 def is_valid_token_symbol(token: str) -> bool:
+    """
+    Kiểm tra token có hợp lệ không (không rỗng, không unknown, không chứa ký tự lạ).
+    """
     if not token or not isinstance(token, str):
         return False
     token = token.strip()
@@ -23,6 +29,13 @@ def is_valid_token_symbol(token: str) -> bool:
 def filter_noise_transactions(
     normalized_data: List[Dict[str, Any]], hot_wallet: str
 ) -> List[Dict[str, Any]]:
+    """
+    Lọc bỏ các giao dịch nhiễu:
+    - Giao dịch nội bộ hot_wallet
+    - Token không hợp lệ
+    - Giao dịch liên quan contract
+    Trả về: Danh sách giao dịch sạch.
+    """
     clean_transactions = []
     ignored_counts = {
         "hotwallet_internal": 0,
@@ -59,6 +72,14 @@ def filter_noise_transactions(
 def run_transaction_normalizer(
     trx_file: str, trc20_file: str, hot_wallet: str, min_frequency: int = 5
 ) -> Dict[str, List[Dict[str, Any]]]:
+    """
+    Pipeline chuẩn hóa và phân loại giao dịch:
+    1. Đọc và chuẩn hóa dữ liệu từ file TRX, TRC-20
+    2. Lọc nhiễu (nội bộ, contract, token lỗi)
+    3. Phân loại thành deposit (nạp) và withdrawal (rút)
+    4. Lưu kết quả ra file
+    Trả về: dict chứa danh sách deposit và withdrawal.
+    """
     """
     Run the full transaction normalizer pipeline: load, normalize, classify.
     Note: Since data only contains transactions related to hot_wallet, deposits are approximated as tx to hot_wallet.
@@ -176,6 +197,12 @@ def classify_transactions_approx(
     normalized_data: List[Dict[str, Any]], hot_wallet: str
 ) -> Dict[str, List[Dict[str, Any]]]:
     """
+    Phân loại xấp xỉ:
+    - Deposit: giao dịch đến hot_wallet (from user)
+    - Withdrawal: giao dịch từ hot_wallet (to user)
+    Trả về: dict chứa danh sách deposit và withdrawal.
+    """
+    """
     Approximate classification: deposits = tx to hot_wallet (from user), withdrawals = tx from hot_wallet (to user).
     """
     deposits = []
@@ -201,7 +228,7 @@ def save_classified_transactions(
     withdrawals_file: str,
 ):
     """
-    Save deposits and withdrawals to separate JSON files.
+    Lưu danh sách deposit và withdrawal ra 2 file JSON riêng biệt.
     """
     with open(deposits_file, "w", encoding="utf-8") as f:
         json.dump(classified["deposits"], f, indent=2, ensure_ascii=False)
