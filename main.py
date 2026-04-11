@@ -11,6 +11,7 @@ from src.baseline_algorithm.matcher import (
     run_matching as run_new_matching,
     save_matched_pairs,
 )
+from src.baseline_algorithm.price_calculator import price_and_save_transactions
 from src.utils.configs import HOT_WALLETS
 
 
@@ -46,9 +47,11 @@ def main():
             "baseline_algorithm",
             "transaction_normalizer",
             "data_collection",
+            "xgboost",
         ],
-        help="Run full pipeline, baseline algorithm (matching), transaction normalizer, or data collection",
+        help="Run full pipeline, baseline algorithm (matching), transaction normalizer, data collection, or xgboost pipeline",
     )
+
     parser.add_argument(
         "--time_window",
         type=int,
@@ -118,7 +121,10 @@ def main():
             None,
             args.bucket_minutes,
         )
+    elif args.mode == "xgboost":
+        from src.xgboost.pipeline import run_xgboost_pipeline
 
+        run_xgboost_pipeline(service, year, args)
     elif args.mode == "data_collection":
         scaping_trongrid(service=service, year=year)
 
@@ -142,6 +148,25 @@ def main():
         with open(withdrawals_file, "r", encoding="utf-8") as f:
             withdrawals = json.load(f)
         classified = {"deposits": deposits, "withdrawals": withdrawals}
+        # Lưu file priced cho deposits và withdrawals
+        price_and_save_transactions(
+            deposits_file,
+            service,
+            year,
+            cache_dir=args.cache_dir,
+            api_key=None,
+            bucket_minutes=args.bucket_minutes,
+            output_dir="data/priced",
+        )
+        price_and_save_transactions(
+            withdrawals_file,
+            service,
+            year,
+            cache_dir=args.cache_dir,
+            api_key=None,
+            bucket_minutes=args.bucket_minutes,
+            output_dir="data/priced",
+        )
 
         # Thiết lập file log cho pipeline
         os.makedirs("results/logs/matcher", exist_ok=True)
