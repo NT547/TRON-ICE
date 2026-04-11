@@ -39,10 +39,7 @@ URL_TRX = f"{TRONGRID_API}/_RELATED_ADDRESS_/transactions"
 
 
 TIME_WINDOW = 600
-<<<<<<< HEAD
 VALUE_THRESHOLD = 0.15
-=======
 VALUE_THRESHOLD = 0.01
->>>>>>> feature/baseline_algorithm
 REQUEST_DELAY = 1
 TARGET_TOKENS = ["USDT", "USDC", "TRX"]

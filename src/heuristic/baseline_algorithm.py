@@ -95,9 +95,12 @@ def match_baseline_streaming(dep_file: str, wit_file: str, out_file: str,
                 "deposit_tx": deposit["txid"],
                 "withdraw_tx": best_withdrawal["txid"],
                 "value_diff_ratio": round(best_score, 4),
-                "time_diff_sec": (best_withdrawal["timestamp"] - d_time) / 1000.0,
                 "value_dep": deposit["value"],
                 "value_wit": best_withdrawal["value"],
+                "time_diff_sec": (best_withdrawal["timestamp"] - d_time) / 1000.0,
+                "time_in" : deposit['timestamp'],
+                'time_out' : best_withdrawal['timestamp']
+
             })
             used_withdrawals.add(best_withdrawal["txid"])
             
