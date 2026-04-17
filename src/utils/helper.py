@@ -73,10 +73,64 @@ def is_outgoing(tx_from, wallet):
 
 ONLY_USDT = False
 # ===== PARSE =====
+def parse_trc20(tx):
+    try:
+        value = int(tx.get("value", 0))
+        decimals = int(tx["token_info"].get("decimals", 0))
 
-            
-def save_json(file_name,data):
-    final_file = f"{file_name}.json"
-    with open(final_file, "w", encoding="utf-8") as f:  
-        json.dump(data, f, indent=2, ensure_ascii=False)
-        print(f"Data is successfully saved in {file_name}")
+        return {
+            "chain": "tron",
+            "type": "TRC20",
+            "txid": tx.get("transaction_id"),
+            "from": tx.get("from"),
+            "to": tx.get("to"),
+            "value": value / (10 ** decimals),  # normalize
+            "token": tx["token_info"].get("symbol"),
+            "timestamp": tx.get("block_timestamp"),
+        }
+
+    except Exception:
+        return None
+
+def parse_trx(tx):
+    try:
+        contract = tx["raw_data"]["contract"][0]
+
+        # check đúng loại
+        if contract["type"] != "TransferContract":
+            return None
+
+        val = contract["parameter"]["value"]
+
+        return {
+            "chain": "tron",
+            "type": "TRX",
+            "txid": tx["txID"],
+            "from": val.get("owner_address"),
+            "to": val.get("to_address"),
+            "value": normalize_trx(val.get("amount", 0)),  # convert sun → TRX
+            "token": None,
+            "timestamp": tx["block_timestamp"],
+        }
+
+    except Exception:
+        return None
+    
+def proccess_raw_data(file_name):
+    if os.path.exists(f"data/raw/{file_name}_trx.json"):
+        with open(f'data/raw/{file_name}_trx.json', 'r', encoding='utf-8') as file:
+            data = json.load(file)
+            data_processed = []
+            for tx in data:
+                data_processed.append(parse_trx(tx))
+            pd.DataFrame(data_processed).to_csv(f"data/processed/{file_name}_trx.csv", index=False)
+            print(f"💾 Saved CSV: data/processed/{file_name}_trx.csv")
+
+    if os.path.exists(f"data/raw/{file_name}_trc20.json"):
+        with open(f'data/raw/{file_name}_trc20.json', 'r', encoding='utf-8') as file:
+            data = json.load(file)
+            data_processed = []
+            for tx in data:
+                data_processed.append(parse_trc20(tx))
+            pd.DataFrame(data_processed).to_csv(f"data/processed/{file_name}_trc20.csv", index=False)
+            print(f"💾 Saved CSV: data/processed/{file_name}_trc20.csv")
