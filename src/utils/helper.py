@@ -7,7 +7,8 @@ import os
 import datetime
 import os
 from src.utils.configs import print_lock
-
+import glob
+from typing import Generator
 
 
 
@@ -117,6 +118,53 @@ def parse_trx(tx):
     except Exception:
         return None
     
+def load_csv(input_dir, chunk_size = 10000) -> Generator[pd.DataFrame, None, None]:
+    if os.path.isfile(input_dir):
+        
+        try:
+            for chunk in pd.read_csv(input_dir, chunksize=chunk_size):
+                yield chunk
+                
+        except Exception as e:
+            print(f"❌ Lỗi file {csv_files}: {e}")
+            
+    elif os.path.isdir(input):
+        csv_files = glob.glob(os.path.join(input_dir, "*.csv"))
+        if not csv_files:
+            print(f"⚠️ Không tìm thấy file CSV trong {input_dir}")
+            return
+        for csv_file in csv_files:
+            try:
+                for chunk in pd.read_csv(csv_file, chunksize=chunk_size):
+                    yield chunk
+            except Exception as e:
+                print(f"❌ Lỗi file {csv_files}: {e}")
+            
+
+def save_csv_in_chunks(chunks,output_file: str,):
+    """
+    Ghi dữ liệu ra CSV theo từng chunk.
+
+    Args:
+        chunks: iterable các DataFrame
+        output_file (str): file output
+    """
+    os.makedirs(os.path.dirname(output_file), exist_ok=True)
+
+    first_chunk = True
+    for chunk in chunks:
+        mode = 'w' if first_chunk else 'a'
+
+        chunk.to_csv(
+            output_file,
+            index=False,
+            mode=mode,
+            header=first_chunk
+        )
+
+        first_chunk = False
+    
+
 def proccess_raw_data(file_name):
     if os.path.exists(f"data/raw/{file_name}_trx.json"):
         with open(f'data/raw/{file_name}_trx.json', 'r', encoding='utf-8') as file:
