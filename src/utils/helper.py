@@ -74,7 +74,6 @@ def is_outgoing(tx_from, wallet):
 
 ONLY_USDT = False
 # ===== PARSE =====
-<<<<<<< HEAD
 def parse_trc20(tx):
     try:
         value = int(tx.get("value", 0))
@@ -136,12 +135,3 @@ def proccess_raw_data(file_name):
                 data_processed.append(parse_trc20(tx))
             pd.DataFrame(data_processed).to_csv(f"data/processed/{file_name}_trc20.csv", index=False)
             print(f"💾 Saved CSV: data/processed/{file_name}_trc20.csv")
-=======
-
-            
-def save_json(file_name,data):
-    final_file = f"{file_name}.json"
-    with open(final_file, "w", encoding="utf-8") as f:  
-        json.dump(data, f, indent=2, ensure_ascii=False)
-        print(f"Data is successfully saved in {file_name}")
->>>>>>> 28f005e (merging)
