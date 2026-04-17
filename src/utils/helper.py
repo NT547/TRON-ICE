@@ -6,11 +6,8 @@ import pandas as pd
 import os
 import datetime
 import os
-<<<<<<< HEAD
-from .configs import print_lock
-=======
 from src.utils.configs import print_lock
->>>>>>> 28f005e (merging)
+
 
 
 
