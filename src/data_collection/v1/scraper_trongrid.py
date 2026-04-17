@@ -6,7 +6,8 @@ import os
 import copy
 from datetime import datetime
 from src.utils.configs import HEADER, HOT_WALLETS , CONTRACT_ADDRESS, URL_TRC20, URL_TRX, params, global_transfers
-from src.data_collection.scaper_multithreaded  import  scrape_multithreaded
+from data_collection.v1.scaper_multithreaded  import  scrape_multithreaded
+
 def scaping_trongrid():
     
     parser = argparse.ArgumentParser(description="Run Trongrid scraper")

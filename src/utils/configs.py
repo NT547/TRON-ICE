@@ -1,4 +1,3 @@
-TOKEN_WHITELIST = ["USDT", "USDC", "TRX"]
 import os
 import threading
 
@@ -8,23 +7,24 @@ load_dotenv()
 
 TRONGRID_API = "https://api.trongrid.io/v1/accounts"
 
-
 TRONGRID_API_KEY = os.getenv("TRONGRID_API_KEY")
-COINGECKO_API_KEY = os.getenv("COINGECKO_API_KEY")
 
 HOT_WALLETS = {
-    "fixedfloat": "TBEkD71bkL7fNz2HuCeisRbtvwwT2JWaMr",
-    "changenow": "TWS1onJnNTg8tJHomceqxBxTsUB1DHh7PV",
-    "sideshift": "TBEkD71bkL7fNz2HuCeisRbtvwwT2JWaMr",
+    "fixedfloat": os.getenv("fixedfloat_hot_wallet"),
+    "changenow": os.getenv("changenow_hot_wallet"),
+    "sideshift": os.getenv("sideshift_hot_wallet"),
 }
 
-HEADER = {"Content-Type": "application/json", "TRON-PRO-API-KEY": TRONGRID_API_KEY}
+HEADER = {
+    "Content-Type": "application/json",
+    "TRON-PRO-API-KEY": TRONGRID_API_KEY 
+}
 
 CONTRACT_ADDRESS = os.getenv("contract_address")
 
 params = {
-    "limit": 200,
-    "order_by": "block_timestamp,asc",
+    "limit": 200, 
+    "order_by": "block_timestamp,asc", 
     "only_confirmed": "true",
 }
 
