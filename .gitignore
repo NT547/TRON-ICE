@@ -1,7 +1,7 @@
 *.env
 .venv
 notebooks/note.txt
-
+data/off-chain/*
 *data/*
 *results/*
 __pycache__/
