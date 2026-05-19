@@ -4,7 +4,7 @@ import logging
 import os
 import glob
 import pandas as pd
-
+from src.get_samples import get_samples
 from src.data_collection.scraper_trongrid import scaping_trongrid
 from src.transaction_classifier.transaction_classifier import run_transaction_classifer
 from src.baseline_algorithm.matcher import (
@@ -45,6 +45,7 @@ def main():
         choices=[
             "full",
             "data_collection",
+            "get_samples",
             "transaction_normalizer",
             "transaction_classifier",
             "baseline_algorithm",
@@ -123,18 +124,26 @@ def main():
             args.bucket_minutes,
         )
         # save_matched_pairs(matches, matched_file)
-    elif args.mode == "transaction_normalizer":
-        nor = transaction_normalizer(raw_files=raw_file)
-        logging.info(
-            f"Transaction normalizer completed"
-        )
+    
     elif args.mode == "xgboost":
         from src.xgboost.pipeline import run_xgboost_pipeline
         run_xgboost_pipeline(service, year, args)
 
     elif args.mode == "data_collection":
         scaping_trongrid(service=service, year=year)
-
+        
+    elif args.mode == "get_samples":
+        get_samples(data_dir="data/raw/")
+        logging.info(
+            f"Get samples completed"
+        )
+        
+    elif args.mode == "transaction_normalizer":
+        nor = transaction_normalizer(raw_files=raw_file)
+        logging.info(
+            f"Transaction normalizer completed"
+        )
+        
     elif args.mode == "transaction_classifier":
         classified = run_transaction_classifer(trx_file, trc20_file, hot_wallet)
         logging.info(

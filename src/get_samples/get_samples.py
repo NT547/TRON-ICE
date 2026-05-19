@@ -33,11 +33,9 @@ def load_sampled_transactions(file_dir: str, limit_per_file: int = 1000):
     return sampled_data
 
 
-def exacting_samples(data_dir = None, samples_dir = None):
+def exacting_samples(data_dir: str):
     if data_dir is None:
         data_dir = "data/raw/"
-    if samples_dir is None:
-        samples_dir = "data/samples/"
 
 
     json_files = glob.glob(os.path.join(data_dir, "*.json"))
@@ -52,7 +50,7 @@ def exacting_samples(data_dir = None, samples_dir = None):
         data = load_sampled_transactions(json_file, limit_per_file=1000)
 
         save_json(
-            file_name=f"{samples_dir}{file_name}_samples",
+            file_name=f"{data_dir}{file_name}_samples",
             data=data
         )
             
