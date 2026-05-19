@@ -1,8 +1,8 @@
-.env
+*.env
 .venv
 notebooks/note.txt
-analysis.*
-
+analysis*
+*cache*
 *data/*
 *results/*
 __pycache__/

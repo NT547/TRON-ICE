@@ -15,7 +15,7 @@ HOT_WALLETS = {
     "sideshift": os.getenv("sideshift_hot_wallet"),
 }
 
-COINGECKO = os.getenv("COINGECKO")
+COINGECKO_API_KEY = os.getenv("COINGECKO_API_KEY")
 
 HEADER = {
     "Content-Type": "application/json",
