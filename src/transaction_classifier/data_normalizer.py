@@ -1,6 +1,6 @@
 # Module: data_normalizer.py
 import pandas as pd
-from src.transaction_normalizer.base58 import hex_to_base58
+from src.transaction_classifier.base58 import hex_to_base58
 
 def normalize_trx_chunk(chunk: pd.DataFrame) -> pd.DataFrame:
     """Chuẩn hóa trực tiếp một chunk DataFrame TRX"""

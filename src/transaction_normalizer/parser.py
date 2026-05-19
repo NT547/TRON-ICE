@@ -35,7 +35,6 @@ def parse_trc20(tx):
 
         return {
             "chain": "tron",
-            "type": "TRC20",
             "txid": tx.get("transaction_id"),
             "from": tx.get("from"),
             "to": tx.get("to"),
@@ -59,7 +58,6 @@ def parse_trx(tx):
 
         return {
             "chain": "tron",
-            "type": "TRX",
             "txid": tx.get("txID"),
             # Convert Hex sang Base58
             "from": hex_to_base58(val.get("owner_address")),

@@ -6,13 +6,14 @@ import glob
 import pandas as pd
 
 from src.data_collection.scraper_trongrid import scaping_trongrid
-from src.transaction_normalizer.transaction_classifier import run_transaction_classifer
+from src.transaction_classifier.transaction_classifier import run_transaction_classifer
 from src.baseline_algorithm.matcher import (
     run_matching_pipeline 
 
 )
 from src.baseline_algorithm.price_calculator import price_and_save_transactions
 from src.utils.configs import HOT_WALLETS
+from src.transaction_normalizer.transaction_normalizer import transaction_normalizer
 
 
 def main():
@@ -43,9 +44,10 @@ def main():
         default="full",
         choices=[
             "full",
-            "baseline_algorithm",
-            "transaction_classifier",
             "data_collection",
+            "transaction_normalizer",
+            "transaction_classifier",
+            "baseline_algorithm",
             "xgboost",
         ],
         help="Run full pipeline, baseline algorithm (matching), transaction classifier, data collection, or xgboost pipeline",
@@ -94,7 +96,7 @@ def main():
     service = args.service
     year = args.year
     hot_wallet = HOT_WALLETS[service]
-    raw_file = f"data/raw/*.json"
+    raw_file = f"data/raw/*json"
     trx_file = f"data/processed/trongrid_{service}_{year}_trx*.csv"
     trc20_file = f"data/processed/trongrid_{service}_{year}_trc20*.csv"
     deposits_file_pattern = f"data/classified/deposits_trongrid_{service}_{year}*.csv"
@@ -121,7 +123,11 @@ def main():
             args.bucket_minutes,
         )
         # save_matched_pairs(matches, matched_file)
-
+    elif args.mode == "transaction_normalizer":
+        nor = transaction_normalizer(raw_files=raw_file)
+        logging.info(
+            f"Transaction normalizer completed"
+        )
     elif args.mode == "xgboost":
         from src.xgboost.pipeline import run_xgboost_pipeline
         run_xgboost_pipeline(service, year, args)
