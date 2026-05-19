@@ -14,16 +14,16 @@ import requests  # Gọi API lấy giá
 import time  # Sleep, timestamp
 from datetime import datetime, timedelta  # Xử lý thời gian
 from typing import Dict, List, Any, Optional
-from src.utils.configs import COINGECKO
+from src.utils.configs import COINGECKO_API_KEY
 
 # Định nghĩa các endpoint và mapping token cho API
-COINGECKO_API = "https://api.coingecko.com/api/v3"  # Endpoint CoinGecko
+COINGECKO_API = "https://api.coingecko.com/api/v3"  # Endpoint COINGECKO_API_KEY
 BINANCE_API = "https://api.binance.com/api/v3"  # Endpoint Binance
 TOKEN_CG_IDS = {
     "TRX": "tron",
     "USDT": "tether",
     "USDC": "usd-coin",
-}  # Mapping token -> CoinGecko id
+}  # Mapping token -> COINGECKO_API_KEY id
 BINANCE_SYMBOLS = {"TRX": "TRXUSDT"}  # Mapping token -> Binance symbol
 STABLE_TOKENS = {"USDT", "USDC"}  # Các stablecoin luôn có giá 1 USD
 HISTORICAL_PRICE_CACHE: Dict[tuple, Dict[int, float]] = (
@@ -53,7 +53,7 @@ def price_and_save_transactions(
         service: Tên dịch vụ (ví dụ: 'fixedfloat')
         year: Năm cần lấy giá lịch sử
         cache_dir: Thư mục cache giá
-        api_key: API key CoinGecko (nếu có)
+        api_key: API key COINGECKO_API_KEY (nếu có)
         bucket_minutes: Độ rộng bucket thời gian để làm tròn timestamp
         output_dir: Thư mục lưu kết quả pricing
     """
@@ -114,11 +114,11 @@ def save_price_cache_file(cache_file: str, prices: Dict[int, float]) -> None:
         json.dump(prices, f, indent=2)
 
 
-def fetch_coingecko_price_history(
+def fetch_COINGECKO_API_KEY_price_history(
     token: str, year: int, api_key: Optional[str] = None
 ) -> Dict[int, float]:
     """
-    Lấy lịch sử giá token từ CoinGecko (theo từng tháng), trả về dict {timestamp: price} (timestamp: giây).
+    Lấy lịch sử giá token từ COINGECKO_API_KEY (theo từng tháng), trả về dict {timestamp: price} (timestamp: giây).
     Nếu bị rate limit hoặc lỗi sẽ retry hoặc trả về dict rỗng.
     """
     if api_key is None:
@@ -135,7 +135,7 @@ def fetch_coingecko_price_history(
         month = dt.month % 12 + 1
         return datetime(year, month, 1)
 
-    # Lặp qua từng tháng để lấy dữ liệu (CoinGecko giới hạn range)
+    # Lặp qua từng tháng để lấy dữ liệu (COINGECKO_API_KEY giới hạn range)
     while current <= end_date:
         next_month = next_month_start(current)
         to_date = min(next_month - timedelta(seconds=1), end_date)
@@ -156,23 +156,23 @@ def fetch_coingecko_price_history(
             response = requests.get(url, params=params, headers=headers, timeout=30)
             if response.status_code == 429:
                 logging.warning(
-                    f"Rate limited by CoinGecko for {token} ({coin_id}) {current.date()} - retrying after backoff"
+                    f"Rate limited by COINGECKO_API_KEY for {token} ({coin_id}) {current.date()} - retrying after backoff"
                 )
                 time.sleep(5 * (attempt + 1))
                 continue
             if response.status_code == 401:
                 logging.warning(
-                    f"Unauthorized access for CoinGecko token {token} ({coin_id}) on range endpoint"
+                    f"Unauthorized access for COINGECKO_API_KEY token {token} ({coin_id}) on range endpoint"
                 )
                 return {}
             if response.status_code == 404:
                 logging.warning(
-                    f"CoinGecko token not found for {token} ({coin_id}); falling back to other sources"
+                    f"COINGECKO_API_KEY token not found for {token} ({coin_id}); falling back to other sources"
                 )
                 return {}
             if response.status_code != 200:
                 logging.warning(
-                    f"Unexpected CoinGecko response {response.status_code} for {token} ({coin_id})"
+                    f"Unexpected COINGECKO_API_KEY response {response.status_code} for {token} ({coin_id})"
                 )
                 return {}
             break
@@ -257,7 +257,7 @@ def get_historical_prices(
     token: str, year: int, cache_dir: str = "cache", api_key: Optional[str] = None
 ) -> Dict[int, float]:
     """
-    Lấy dict {timestamp: price} cho token trong năm, ưu tiên lấy từ cache file, nếu không có thì gọi API CoinGecko/Binance.
+    Lấy dict {timestamp: price} cho token trong năm, ưu tiên lấy từ cache file, nếu không có thì gọi API COINGECKO_API_KEY/Binance.
     Kết quả sẽ được cache vào RAM và file để tăng tốc cho lần sau.
     """
     if api_key is None:
@@ -278,7 +278,7 @@ def get_historical_prices(
     if token in STABLE_TOKENS:
         prices = generate_stable_price_history(year)
     else:
-        prices = fetch_coingecko_price_history(token, year, api_key)
+        prices = fetch_COINGECKO_API_KEY_price_history(token, year, api_key)
         if not prices:
             logging.info(f"Falling back to Binance price history for {token} {year}")
             prices = fetch_binance_price_history(token, year)
@@ -375,7 +375,7 @@ def calculate_usd_value(
         tx: dict giao dịch (phải có 'token', 'amount', 'timestamp')
         year: năm mặc định (có thể bị override bởi timestamp)
         cache_dir: thư mục cache giá
-        api_key: API key CoinGecko (nếu có)
+        api_key: API key COINGECKO_API_KEY (nếu có)
         bucket_minutes: độ rộng bucket thời gian
     Returns:
         float: giá trị USD hoặc None nếu không có giá

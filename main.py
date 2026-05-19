@@ -1,17 +1,15 @@
-
-
 import argparse
 import json
 import logging
 import os
+import glob
+import pandas as pd
+
 from src.data_collection.scraper_trongrid import scaping_trongrid
-from src.transaction_normalizer.transaction_classifier import (
-    run_transaction_normalizer,
-    save_classified_transactions,
-)
+from src.transaction_normalizer.transaction_classifier import run_transaction_classifer
 from src.baseline_algorithm.matcher import (
-    run_matching as run_new_matching,
-    save_matched_pairs,
+    run_matching_pipeline 
+
 )
 from src.baseline_algorithm.price_calculator import price_and_save_transactions
 from src.utils.configs import HOT_WALLETS
@@ -21,7 +19,6 @@ def main():
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
     )
-    # python main.py --service fixedfloat --year 2025 #get data for fixedfloat in 2025
 
     parser = argparse.ArgumentParser(description="Run Trongrid scraper")
 
@@ -47,17 +44,17 @@ def main():
         choices=[
             "full",
             "baseline_algorithm",
-            "transaction_normalizer",
+            "transaction_classifier",
             "data_collection",
             "xgboost",
         ],
-        help="Run full pipeline, baseline algorithm (matching), transaction normalizer, data collection, or xgboost pipeline",
+        help="Run full pipeline, baseline algorithm (matching), transaction classifier, data collection, or xgboost pipeline",
     )
 
     parser.add_argument(
         "--time_window",
         type=int,
-        default=300,
+        default=180,
         help="Time window in seconds for matching (default: 300)",
     )
     parser.add_argument(
@@ -89,7 +86,7 @@ def main():
         "--output_file",
         type=str,
         default=None,
-        help="Custom output file for matched pairs. Defaults to results/matched/matched_pairs_{service}_{year}.json",
+        help="Custom output file for matched pairs. Defaults to data/matched/matched_pairs_{service}_{year}.csv",
     )
 
     args = parser.parse_args()
@@ -97,22 +94,22 @@ def main():
     service = args.service
     year = args.year
     hot_wallet = HOT_WALLETS[service]
-
-    trx_file = f"data/raw/trongrid_{service}_{year}_trx.json"
-    trc20_file = f"data/raw/trongrid_{service}_{year}_trc20.json"
-    deposits_file = f"data/classified/deposits_trongrid_{service}_{year}.json"
-    withdrawals_file = f"data/classified/withdrawals_trongrid_{service}_{year}.json"
+    raw_file = f"data/raw/*.json"
+    trx_file = f"data/processed/trongrid_{service}_{year}_trx*.csv"
+    trc20_file = f"data/processed/trongrid_{service}_{year}_trc20*.csv"
+    deposits_file_pattern = f"data/classified/deposits_trongrid_{service}_{year}*.csv"
+    withdrawals_file_pattern = f"data/classified/withdrawals_trongrid_{service}_{year}*.csv"
     matched_file = (
-        args.output_file or f"data/matched/matched_pairs_{service}_{year}.json"
+        args.output_file or f"data/matched/matched_pairs_{service}_{year}.csv"
     )
 
     os.environ["MATCH_SERVICE"] = service
     os.environ["MATCH_YEAR"] = str(year)
+
     if args.mode == "full":
         scaping_trongrid(service=service, year=year)
-        classified = run_transaction_normalizer(trx_file, trc20_file, hot_wallet)
-        # Không lưu lại file phân loại ở đây nữa, đã lưu trong run_transaction_normalizer
-        matches = run_new_matching(
+        classified = run_transaction_classifer(trx_file, trc20_file, hot_wallet)
+        matches = run_matching_pipeline(
             classified["deposits"],
             classified["withdrawals"],
             args.time_window,
@@ -123,15 +120,17 @@ def main():
             None,
             args.bucket_minutes,
         )
+        # save_matched_pairs(matches, matched_file)
+
     elif args.mode == "xgboost":
         from src.xgboost.pipeline import run_xgboost_pipeline
-
         run_xgboost_pipeline(service, year, args)
+
     elif args.mode == "data_collection":
         scaping_trongrid(service=service, year=year)
 
-    elif args.mode == "transaction_normalizer":
-        classified = run_transaction_normalizer(trx_file, trc20_file, hot_wallet)
+    elif args.mode == "transaction_classifier":
+        classified = run_transaction_classifer(trx_file, trc20_file, hot_wallet)
         logging.info(
             f"Transaction normalizer completed: {len(classified['deposits'])} deposits, {len(classified['withdrawals'])} withdrawals."
         )
@@ -139,38 +138,17 @@ def main():
     elif args.mode == "baseline_algorithm":
         os.environ["MATCH_SERVICE"] = service
         os.environ["MATCH_YEAR"] = str(year)
-        if not os.path.exists(deposits_file) or not os.path.exists(withdrawals_file):
+
+        dep_files = glob.glob(deposits_file_pattern.replace("*", ""))
+        wth_files = glob.glob(withdrawals_file_pattern.replace("*", ""))
+
+        if not dep_files or not wth_files:
             raise FileNotFoundError(
                 "Baseline algorithm requires precomputed deposit/withdrawal files. "
                 "Run --mode transaction_normalizer first to generate them."
             )
 
-        with open(deposits_file, "r", encoding="utf-8") as f:
-            deposits = json.load(f)
-        with open(withdrawals_file, "r", encoding="utf-8") as f:
-            withdrawals = json.load(f)
-        classified = {"deposits": deposits, "withdrawals": withdrawals}
-        # Lưu file priced cho deposits và withdrawals
-        price_and_save_transactions(
-            deposits_file,
-            service,
-            year,
-            cache_dir=args.cache_dir,
-            api_key=None,
-            bucket_minutes=args.bucket_minutes,
-            output_dir="data/priced",
-        )
-        price_and_save_transactions(
-            withdrawals_file,
-            service,
-            year,
-            cache_dir=args.cache_dir,
-            api_key=None,
-            bucket_minutes=args.bucket_minutes,
-            output_dir="data/priced",
-        )
-
-        # Thiết lập file log cho pipeline
+        # Thiết lập file log cho pipeline Matcher   
         os.makedirs("results/logs/matcher", exist_ok=True)
         log_file = os.path.join(
             "results/logs/matcher", f"matched_transaction_{service}_{year}.log"
@@ -180,18 +158,36 @@ def main():
             logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
         )
         logging.getLogger().addHandler(file_handler)
-        matches = run_new_matching(
-            classified["deposits"],
-            classified["withdrawals"],
-            args.time_window,
-            args.value_threshold,
-            year,
-            args.cache_dir,
-            args.num_processes,
-            None,
-            args.bucket_minutes,
-        )
-        save_matched_pairs(matches, matched_file)
+        
+        # Duyệt qua từng file được phân loại (Xử lý riêng biệt file thường và file _samples)
+        for d_file in dep_files:
+            w_file = d_file.replace("deposits_", "withdrawals_")
+            if not os.path.exists(w_file):
+                logging.warning(f"Không tìm thấy file rút tiền tương ứng cho {d_file}")
+                continue
+                
+            # Xác định tên file output matched tương ứng (Tách riêng file mẫu _samples nếu có)
+            if "_samples" in d_file.lower():
+                base_matched, ext = os.path.splitext(matched_file)
+                current_matched_file = f"{base_matched}_samples{ext}"
+            else:
+                current_matched_file = matched_file
+                
+            logging.info(f"\n--- ĐANG CHẠY PIPELINE KHỚP CẶP ---\n  Nạp: {d_file}\n  Rút: {w_file}\n  Đầu ra: {current_matched_file}")
+            
+            # Gọi trực tiếp pipeline mới (Tự động load chunk, định giá USD và lưu file)
+            run_matching_pipeline(
+                deposits_path=d_file,
+                withdrawals_path=w_file,
+                output_path=current_matched_file,
+                time_window=args.time_window,
+                value_threshold=args.value_threshold,
+                year=year,
+                cache_dir=args.cache_dir,
+                api_key=None,
+                bucket_minutes=args.bucket_minutes,
+            )
+            
         logging.getLogger().removeHandler(file_handler)
         file_handler.close()
 

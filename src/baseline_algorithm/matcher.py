@@ -1,84 +1,21 @@
 # Module: matcher.py
-# Chức năng: Ghép cặp giao dịch nạp (deposit) và rút (withdrawal) theo thuật toán baseline (dựa vào thời gian, giá trị, token), hỗ trợ tính toán giá trị USD, đa tiến trình, và lưu kết quả.
-#
-# - Ghép cặp greedy 1-1 giữa deposit và withdrawal dựa trên time window, value threshold, token
-# - Tính toán giá trị USD cho giao dịch dựa trên giá lịch sử (price_calculator)
-# - Hỗ trợ batch processing, đa tiến trình/đa luồng để tăng tốc
-# - Lưu kết quả ghép cặp ra file JSON
+# Chức năng: Ghép cặp giao dịch nạp (deposit) và rút (withdrawal) tuân thủ nghiêm ngặt quy tắc ICE
+#            Tích hợp cơ chế kiểm tra Tái sử dụng địa chỉ (Address Reuse) toàn cục.
 
 import bisect
 import json
 import logging
 import os
-from typing import List, Dict, Any, Optional
+import pandas as pd
+from typing import List, Dict, Any, Optional, Generator
 from collections import defaultdict
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
+
+# Import các hàm tính toán giá và helper xử lý CSV
 from src.baseline_algorithm.price_calculator import (
     calculate_usd_value,
     get_historical_prices,
 )
-
-
-def price_deposits_and_save(
-    deposits: List[Dict[str, Any]],
-    service: str,
-    year: int,
-    cache_dir: str = "cache",
-    api_key: Optional[str] = None,
-    bucket_minutes: int = 5,
-    output_dir: str = "data/priced",
-):
-    """
-    Tính usd_value cho từng deposit và lưu ra file data/priced/deposits_priced_trongrid_{service}_{year}.json
-    Args:
-        deposits: list giao dịch nạp
-        service: tên dịch vụ (vd: fixedfloat)
-        year: năm lấy giá
-        cache_dir: thư mục cache giá
-        api_key: API key CoinGecko (nếu có)
-        bucket_minutes: độ rộng bucket thời gian
-        output_dir: thư mục lưu file kết quả
-    """
-    from src.baseline_algorithm.price_calculator import calculate_usd_value
-
-    os.makedirs(output_dir, exist_ok=True)
-    for tx in deposits:
-        if tx.get("usd_value") is None:
-            tx["usd_value"] = calculate_usd_value(
-                tx,
-                year,
-                cache_dir=cache_dir,
-                api_key=api_key,
-                bucket_minutes=bucket_minutes,
-            )
-    output_file = os.path.join(
-        output_dir, f"deposits_priced_trongrid_{service}_{year}.json"
-    )
-    with open(output_file, "w", encoding="utf-8") as f:
-        json.dump(deposits, f, indent=2, ensure_ascii=False)
-    logging.info(f"Saved priced deposits to {output_file}")
-
-
-def prefetch_price_histories(
-    transactions: List[Dict[str, Any]],
-    year: int,
-    cache_dir: str,
-    api_key: Optional[str],
-) -> None:
-    """
-    Tải trước lịch sử giá cho tất cả token xuất hiện trong danh sách giao dịch (tăng tốc cho bước pricing).
-    Args:
-        transactions: list giao dịch (deposit/withdrawal)
-        year: năm lấy giá
-        cache_dir: thư mục cache
-        api_key: API key CoinGecko (nếu có)
-    """
-    unique_tokens = {tx["token"] for tx in transactions if tx.get("token")}
-    logging.info(
-        f"Prefetching historical price caches for tokens: {', '.join(sorted(unique_tokens))}"
-    )
-    for token in unique_tokens:
-        get_historical_prices(token, year, cache_dir, api_key)
+from src.utils.helper import load_csv, save_csv_in_chunks
 
 
 def compute_usd_values(
@@ -90,14 +27,15 @@ def compute_usd_values(
 ) -> None:
     """
     Tính usd_value cho từng giao dịch nếu chưa có, sử dụng cache giá lịch sử.
-    Args:
-        transactions: list giao dịch (deposit/withdrawal)
-        year: năm lấy giá
-        cache_dir: thư mục cache
-        api_key: API key CoinGecko (nếu có)
-        bucket_minutes: độ rộng bucket thời gian
+    Đồng thời chuẩn hóa trường số lượng (hỗ trợ cả 'amount' và 'value').
     """
     for tx in transactions:
+        if tx.get("token") != "TRX":
+            continue
+        
+        if "amount" not in tx and "value" in tx:
+            tx["amount"] = float(tx["value"])
+
         if tx.get("usd_value") is None:
             tx["usd_value"] = calculate_usd_value(
                 tx,
@@ -113,15 +51,13 @@ def build_withdrawal_index(
 ) -> tuple[Dict[str, List[Dict[str, Any]]], Dict[str, List[int]]]:
     """
     Tạo index các withdrawal theo token và danh sách timestamp để tăng tốc tìm kiếm khi ghép cặp.
-    Returns:
-        withdrawals_by_token: dict token -> list withdrawal
-        withdrawal_timestamps: dict token -> list timestamp (đã sort)
     """
     withdrawals_by_token: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
     withdrawal_timestamps: Dict[str, List[int]] = {}
 
     for w in withdrawals:
-        withdrawals_by_token[w["token"]].append(w)
+        if w.get("token"):
+            withdrawals_by_token[w["token"]].append(w)
 
     for token, token_withdrawals in withdrawals_by_token.items():
         token_withdrawals.sort(key=lambda x: x["timestamp"])
@@ -136,137 +72,150 @@ def match_deposit_withdrawal(
     withdrawal_timestamps: List[int],
     time_window: int,
     value_threshold: float,
+    all_deposit_senders: set,  # BỔ SUNG: Tập hợp toàn bộ địa chỉ nạp để check Address Reuse
 ) -> List[Dict[str, Any]]:
     """
-    Ghép một deposit với các withdrawal hợp lệ trong khoảng thời gian và giá trị cho phép.
-    Args:
-        deposit: dict giao dịch nạp
-        withdrawals: list withdrawal cùng token
-        withdrawal_timestamps: list timestamp withdrawal (đã sort)
-        time_window: khoảng thời gian cho phép (giây)
-        value_threshold: ngưỡng lệch giá trị cho phép (tỉ lệ)
-    Returns:
-        list các dict match (deposit, withdrawal, time_diff, value_diff_percent)
+    Tìm kiếm và xếp hạng các giao dịch rút tiền khớp với giao dịch nạp tiền
+    Áp dụng quy tắc phân tầng địa chỉ tái sử dụng nâng cao.
     """
-    matches: List[Dict[str, Any]] = []
-    dep_ts = deposit["timestamp"]
-    dep_value = deposit.get("usd_value", 0.0)
-    if dep_value <= 0:
-        logging.debug(
-            f"Skipping deposit {deposit.get('txid')} because usd_value={dep_value}"
-        )
-        return matches
+    d_time = deposit["timestamp"]
+    d_usd = deposit.get("usd_value")
+    d_token = deposit.get("token")
+    if not d_usd or d_usd == 0:
+        return []
 
-    left = bisect.bisect_left(withdrawal_timestamps, dep_ts - time_window * 1000)
-    right = bisect.bisect_right(withdrawal_timestamps, dep_ts + time_window * 1000)
-    candidates = withdrawals[left:right]
+    time_window_ms = time_window * 1000
 
-    for withdrawal in candidates:
-        w_value = withdrawal.get("usd_value", 0.0)
-        if w_value <= 0:
+    # 1. KIỂM TRA TIÊN QUYẾT & LỌC T (Thời gian)
+    left_idx = bisect.bisect_right(withdrawal_timestamps, d_time)
+    right_idx = bisect.bisect_right(withdrawal_timestamps, d_time + time_window_ms)
+
+    candidates = []
+    dep_sender = str(deposit.get("from") or deposit.get("sender") or "").lower().strip()
+
+    for i in range(left_idx, right_idx):
+        w = withdrawals[i]
+        w_usd = w.get("usd_value")
+        w_token = w.get("token")
+        if not w_usd or w_token != d_token:
             continue
-        value_diff = abs(w_value - dep_value) / dep_value
-        if value_diff <= value_threshold:
-            matches.append(
-                {
-                    "deposit": deposit,
-                    "withdrawal": withdrawal,
-                    "time_diff": abs(withdrawal["timestamp"] - dep_ts),
-                    "value_diff_percent": value_diff * 100,
-                }
-            )
 
-    return matches
-
-
-def process_batch(
-    batch_deposits: List[Dict[str, Any]],
-    withdrawals_by_token: Dict[str, List[Dict[str, Any]]],
-    withdrawal_timestamps: Dict[str, List[int]],
-    time_window: int,
-    value_threshold: float,
-) -> List[Dict[str, Any]]:
-    """
-    Xử lý một batch deposit, ghép cặp với withdrawal theo token, trả về tất cả match tìm được.
-    Args:
-        batch_deposits: list deposit trong batch
-        withdrawals_by_token: dict token -> list withdrawal
-        withdrawal_timestamps: dict token -> list timestamp
-        time_window: khoảng thời gian cho phép (giây)
-        value_threshold: ngưỡng lệch giá trị cho phép (tỉ lệ)
-    Returns:
-        list các dict match
-    """
-    all_matches: List[Dict[str, Any]] = []
-    logging.info(f"Processing batch with {len(batch_deposits)} deposits")
-
-    for deposit in batch_deposits:
-        token = deposit["token"]
-        if token not in withdrawals_by_token:
+        # 2. LỌC V (Giá trị)
+        value_diff_ratio = abs(w_usd - d_usd) / d_usd
+        if value_diff_ratio > value_threshold or value_diff_ratio < 0.01:
             continue
-        matches = match_deposit_withdrawal(
-            deposit,
-            withdrawals_by_token[token],
-            withdrawal_timestamps[token],
-            time_window,
-            value_threshold,
+
+        w_receiver = str(w.get("to") or w.get("receiver") or "").lower().strip()
+
+        # 3. LOGIC CẢI TIẾN: PHÂN TẦNG ĐỊA CHỈ (Address Reuse)
+        
+        # Ưu tiên: Địa chỉ rút này từng được sử dụng để nạp bởi 1 hoặc nhiều địa chỉ khác trong hệ thống
+        is_address_reused = (w_receiver in all_deposit_senders) and (w_receiver != "")
+
+        # 4. QUY TẮC NHỎ NHẤT (Minimal V and T)
+        time_diff = w["timestamp"] - d_time
+        t_score = time_diff / time_window_ms
+        v_score = value_diff_ratio / value_threshold
+        combined_deviation = t_score + v_score
+
+        candidates.append(
+            {
+                "deposit_txid": deposit.get("txid"),
+                "withdrawal_txid": w.get("txid"),
+                "deposit_address": deposit.get("from"),
+                "withdrawal_address": w.get("to"),
+                "is_address_reused": is_address_reused, 
+                "deviation_score": combined_deviation,
+                "time_diff_sec": time_diff / 1000,
+                "value_diff_percent": value_diff_ratio * 100,
+            }
         )
-        if matches:
-            logging.debug(
-                f"Deposit {deposit.get('txid')} matched {len(matches)} withdrawal(s)"
-            )
-            all_matches.extend(matches)
 
-    return all_matches
+    # XẾP HẠNG ỨNG VIÊN THEO 3 TẦNG ƯU TIÊN:
+    # Tầng 1: is_address_reused đứng trước (True -> False)
+    # Tầng 1: deviation_score nhỏ nhất đứng trước (Tăng dần)
+    candidates.sort(
+        key=lambda x: (not x["is_address_reused"], x["deviation_score"])
+    )
+
+    return candidates
 
 
-def run_matching(
-    deposits: List[Dict[str, Any]],
-    withdrawals: List[Dict[str, Any]],
-    time_window: int = 300,
+def run_matching_pipeline(
+    deposits_path: str,
+    withdrawals_path: str,
+    output_path: str,
+    time_window: int = 180,
     value_threshold: float = 0.05,
     year: int = 2025,
     cache_dir: str = "cache",
-    num_processes: int = 1,
     api_key: Optional[str] = None,
     bucket_minutes: int = 5,
-) -> List[Dict[str, Any]]:
+    chunk_size: int = 10000,
+) -> None:
     """
-    Pipeline ghép cặp baseline:
-    - Tính giá trị USD cho tất cả giao dịch nạp/rút
-    - Chỉ giữ lại giao dịch hợp lệ (có usd_value, token)
-    - Xây dựng index withdrawal theo token
-    - Chia batch và ghép cặp song song (đa tiến trình hoặc đa luồng)
-    - Trả về danh sách các cặp match (deposit, withdrawal, time_diff, value_diff_percent)
-    Args:
-        deposits: list giao dịch nạp
-        withdrawals: list giao dịch rút
-        time_window: khoảng thời gian cho phép (giây)
-        value_threshold: ngưỡng lệch giá trị cho phép (tỉ lệ)
-        year: năm lấy giá
-        cache_dir: thư mục cache giá
-        num_processes: số tiến trình/luồng song song
-        api_key: API key CoinGecko (nếu có)
-        bucket_minutes: độ rộng bucket thời gian
-    Returns:
-        list các dict match (deposit, withdrawal, time_diff, value_diff_percent)
+    Pipeline xử lý đầu cuối (End-to-End) tối ưu dữ liệu lớn bằng CSV Chunking
     """
-    logging.info(
-        f"Starting matching: {len(deposits)} deposits, {len(withdrawals)} withdrawals, using {num_processes} processes."
-    )
-    # ...existing code...
+    # BƯỚC CỐT LÕI MỚI: Thu thập nhanh toàn bộ địa chỉ gửi tiền (Deposit Senders) để làm bản đồ đối chiếu toàn cục
+    logging.info("BƯỚC 0: Đang thiết lập bản đồ định danh địa chỉ nạp (Global Deposit Senders)...")
+    all_deposit_senders = set()
+    pre_deposit_chunks = load_csv(deposits_path, chunk_size=chunk_size)
+    for chunk in pre_deposit_chunks:
+        for col in ["from", "sender"]:
+            if col in chunk.columns:
+                # Đưa về dạng lowercase để tránh sai lệch chữ hoa/chữ thường từ các hàm parser
+                all_deposit_senders.update(
+                    chunk[col].dropna().astype(str).str.lower().str.strip().tolist()
+                )
+    logging.info(f"Đã ghi nhận tổng cộng {len(all_deposit_senders)} địa chỉ ví nạp duy nhất.")
 
+    logging.info("BƯỚC 1: Bắt đầu tải và định giá danh sách dữ liệu Rút tiền (Withdrawals)...")
+    withdrawal_chunks = load_csv(withdrawals_path, chunk_size=chunk_size)
+    all_withdrawals: List[Dict[str, Any]] = []
 
-def save_matched_pairs(matches: List[Dict[str, Any]], output_file: str):
-    """
-    Lưu danh sách các cặp match ra file JSON.
-    Args:
-        matches: list các dict match (deposit, withdrawal, ...)
-        output_file: đường dẫn file JSON kết quả
-    """
-    directory = os.path.dirname(output_file)
-    if directory:
-        os.makedirs(directory, exist_ok=True)
-    with open(output_file, "w", encoding="utf-8") as f:
-        json.dump(matches, f, indent=2, ensure_ascii=False)
-    logging.info(f"Saved {len(matches)} matched pairs to {output_file}.")
+    for chunk in withdrawal_chunks:
+        all_withdrawals.extend(chunk.to_dict("records"))
+
+    logging.info(f"Đã tải {len(all_withdrawals)} bản ghi withdrawal. Tiến hành tính toán định giá USD...")
+    compute_usd_values(all_withdrawals, year, cache_dir, api_key, bucket_minutes)
+
+    withdrawals_by_token, withdrawal_timestamps = build_withdrawal_index(all_withdrawals)
+    used_withdrawal_txids = set()
+
+    def match_chunk_generator() -> Generator[pd.DataFrame, None, None]:
+        logging.info("BƯỚC 2: Bắt đầu stream và xử lý danh sách dữ liệu Nạp tiền (Deposits)...")
+        deposit_chunks = load_csv(deposits_path, chunk_size=chunk_size)
+
+        for chunk in deposit_chunks:
+            batch_deposits = chunk.to_dict("records")
+            compute_usd_values(batch_deposits, year, cache_dir, api_key, bucket_minutes)
+
+            chunk_matched_pairs = []
+            for deposit in batch_deposits:
+                token = deposit.get("token")
+                if not token or token not in withdrawals_by_token:
+                    continue
+
+                # Truyền bản đồ ví `all_deposit_senders` vào để chấm điểm phân tầng
+                ranked_candidates = match_deposit_withdrawal(
+                    deposit,
+                    withdrawals_by_token[token],
+                    withdrawal_timestamps[token],
+                    time_window,
+                    value_threshold,
+                    all_deposit_senders,
+                )
+
+                for match in ranked_candidates:
+                    w_txid = match["withdrawal_txid"]
+                    if w_txid not in used_withdrawal_txids:
+                        used_withdrawal_txids.add(w_txid)
+                        chunk_matched_pairs.append(match)
+                        break
+
+            if chunk_matched_pairs:
+                yield pd.DataFrame(chunk_matched_pairs)
+
+    logging.info(f"BƯỚC 3: Tiến hành ghi dữ liệu ghép cặp ra file đầu ra: {output_path}")
+    save_csv_in_chunks(match_chunk_generator(), output_path)
+    logging.info("🎉 Hoàn tất quá trình khớp cặp giao dịch theo thực thể địa chỉ tái sử dụng thành công!")
