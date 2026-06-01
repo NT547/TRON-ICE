@@ -1,14 +1,20 @@
 import argparse
-
-import pandas as pd
+import copy
 import json
 import os
-
-
-import copy
+import sys
 from datetime import datetime
-from src.utils.configs import HEADER, HOT_WALLETS , CONTRACT_ADDRESS, URL_TRC20, URL_TRX, params, global_transfers
-from src.data_collection.scaper_multithreaded  import  scrape_multithreaded
+from pathlib import Path
+
+# Allow: python src/data_collection/scraper_trongrid.py (from repo root)
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+
+from src.utils.configs import HEADER, HOT_WALLETS, CONTRACT_ADDRESS, URL_TRC20, URL_TRX, params, global_transfers
+from src.data_collection.scaper_multithreaded import scrape_multithreaded
+
+
 def scaping_trongrid():
     
     parser = argparse.ArgumentParser(description="Run Trongrid scraper")
@@ -25,7 +31,7 @@ def scaping_trongrid():
         "--year",
         type=int,
         required=True,
-        choices=range(2020, 2026),
+        choices=range(2020, 2027),
         help="Year to scrape (e.g., 2025)"
     )
     parser.add_argument(
@@ -41,6 +47,22 @@ def scaping_trongrid():
     year = args.year
     file_name = args.file_name
 
+    hot_wallet = HOT_WALLETS.get(service)
+    if not hot_wallet:
+        raise SystemExit(
+            f"Missing hot wallet for service '{service}'. "
+            f"Set {service}_hot_wallet in {_REPO_ROOT / '.env'} "
+            f"(e.g. sideshift_hot_wallet=T...)."
+        )
+    if not CONTRACT_ADDRESS:
+        raise SystemExit(
+            f"Missing contract_address in {_REPO_ROOT / '.env'} (USDT TRC20 contract)."
+        )
+    if not HEADER.get("TRON-PRO-API-KEY"):
+        raise SystemExit(
+            f"Missing TRONGRID_API_KEY in {_REPO_ROOT / '.env'}."
+        )
+
     if file_name is None:
         file_name = f"trongrid_{service}_{year}"
     else:
@@ -52,8 +74,8 @@ def scaping_trongrid():
     PARAMS = copy.deepcopy(params)
     
     scrape_multithreaded(
-        URL=URL_TRX.replace("_RELATED_ADDRESS_", HOT_WALLETS[service]),
-        RELATED_ADDRESS = HOT_WALLETS[service], 
+        URL=URL_TRX.replace("_RELATED_ADDRESS_", hot_wallet),
+        RELATED_ADDRESS=hot_wallet, 
         HEADER = HEADER,
         PARAMS= PARAMS, 
         file_name=f"{file_name}_trx", 
@@ -66,8 +88,8 @@ def scaping_trongrid():
     PARAMS['contract_address'] = CONTRACT_ADDRESS
     # Run with 4 threads for example (adjust num_workers based on your API tier capacity)
     scrape_multithreaded(
-        URL=URL_TRC20.replace("_RELATED_ADDRESS_", HOT_WALLETS[service]),
-        RELATED_ADDRESS = HOT_WALLETS[service], 
+        URL=URL_TRC20.replace("_RELATED_ADDRESS_", hot_wallet),
+        RELATED_ADDRESS=hot_wallet, 
         HEADER = HEADER,  
         PARAMS= PARAMS,
         file_name=f"{file_name}_trc20", 
@@ -75,3 +97,7 @@ def scaping_trongrid():
         max_timestamp=max_ts,
         num_workers=4
     )
+
+
+if __name__ == "__main__":
+    scaping_trongrid()

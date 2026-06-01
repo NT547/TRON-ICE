@@ -37,7 +37,7 @@ def main():
         "--year",
         type=int,
         required=True,
-        choices=range(2020, 2026),
+        choices=range(2020, 2027),
         help="Year to scrape (e.g., 2025)",
     )
     parser.add_argument(
@@ -49,9 +49,27 @@ def main():
             "baseline_algorithm",
             "transaction_normalizer",
             "data_collection",
+            "ground_truth",
             "xgboost",
         ],
-        help="Run full pipeline, baseline algorithm (matching), transaction normalizer, data collection, or xgboost pipeline",
+        help="Run full pipeline, baseline, normalizer, data collection, ground_truth, or xgboost",
+    )
+    parser.add_argument(
+        "--trace-depth",
+        type=int,
+        default=0,
+        help="TRON n-hop trace for ground_truth mode (0=off)",
+    )
+    parser.add_argument(
+        "--export-training",
+        action="store_true",
+        help="Export XGBoost training pairs when mode=ground_truth",
+    )
+    parser.add_argument(
+        "--history-network-filter",
+        choices=["all", "tron-any", "tron-both"],
+        default="all",
+        help="Filter off-chain history by network when mode=ground_truth",
     )
 
     parser.add_argument(
@@ -123,6 +141,24 @@ def main():
             None,
             args.bucket_minutes,
         )
+    elif args.mode == "ground_truth":
+        import sys
+        from pathlib import Path
+
+        gt_root = Path(__file__).resolve().parent / "ground-truth"
+        if str(gt_root) not in sys.path:
+            sys.path.insert(0, str(gt_root))
+        from src_ground_truth.runner import GroundTruthRunConfig, run_ground_truth
+
+        cfg = GroundTruthRunConfig(
+            service=service,
+            year=year,
+            trace_depth=args.trace_depth,
+            export_training=args.export_training,
+            history_network_filter=args.history_network_filter,
+        )
+        summary = run_ground_truth(cfg)
+        logging.info("Ground-truth done: %s", summary)
     elif args.mode == "xgboost":
         from src.xgboost.pipeline import run_xgboost_pipeline
 
