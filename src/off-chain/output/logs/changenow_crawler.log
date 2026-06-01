@@ -1,0 +1,131 @@
+2026-05-31 23:47:29,512 INFO [crawler] Starting ChangeNOW crawler. Output: D:\Blockchain\DO_AN\TRON-ICE\src\off-chain\output\changenow_recent_requests.jsonl
+2026-05-31 23:47:29,512 INFO [crawler] Resume: 0 dedup keys from D:\Blockchain\DO_AN\TRON-ICE\src\off-chain\output\changenow_recent_requests.jsonl
+2026-05-31 23:47:30,612 ERROR [client] Request failed (1/5): 401 Client Error: Unauthorized for url: https://api.changenow.io/v1/transactions/2e506219cdbb320be06ba17a74bcc7c847a884f094c7cb5de84468f5b71b9cc8; sleep 5s
+2026-05-31 23:47:36,132 ERROR [client] Request failed (2/5): 401 Client Error: Unauthorized for url: https://api.changenow.io/v1/transactions/2e506219cdbb320be06ba17a74bcc7c847a884f094c7cb5de84468f5b71b9cc8; sleep 10s
+2026-05-31 23:47:46,646 ERROR [client] Request failed (3/5): 401 Client Error: Unauthorized for url: https://api.changenow.io/v1/transactions/2e506219cdbb320be06ba17a74bcc7c847a884f094c7cb5de84468f5b71b9cc8; sleep 20s
+2026-05-31 23:48:07,157 ERROR [client] Request failed (4/5): 401 Client Error: Unauthorized for url: https://api.changenow.io/v1/transactions/2e506219cdbb320be06ba17a74bcc7c847a884f094c7cb5de84468f5b71b9cc8; sleep 40s
+2026-05-31 23:48:47,731 ERROR [client] Request failed (5/5): 401 Client Error: Unauthorized for url: https://api.changenow.io/v1/transactions/2e506219cdbb320be06ba17a74bcc7c847a884f094c7cb5de84468f5b71b9cc8; sleep 80s
+2026-05-31 23:50:07,732 ERROR [crawler] Poll failed; retry after interval.
+Traceback (most recent call last):
+  File "D:\Blockchain\DO_AN\TRON-ICE\src\off-chain\ChangeNOW_crawler\client.py", line 59, in fetch_recent_transactions
+    return self._fetch_v1()
+           ~~~~~~~~~~~~~~^^
+  File "D:\Blockchain\DO_AN\TRON-ICE\src\off-chain\ChangeNOW_crawler\client.py", line 92, in _fetch_v1
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Asus\AppData\Local\Programs\Python\Python313\Lib\site-packages\requests\models.py", line 1028, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 401 Client Error: Unauthorized for url: https://api.changenow.io/v1/transactions/2e506219cdbb320be06ba17a74bcc7c847a884f094c7cb5de84468f5b71b9cc8
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\Blockchain\DO_AN\TRON-ICE\src\off-chain\ChangeNOW_crawler\crawler.py", line 136, in run
+    self.poll_once()
+    ~~~~~~~~~~~~~~^^
+  File "D:\Blockchain\DO_AN\TRON-ICE\src\off-chain\ChangeNOW_crawler\crawler.py", line 111, in poll_once
+    txs = self.client.fetch_recent_transactions(status=self.status_filter)
+  File "D:\Blockchain\DO_AN\TRON-ICE\src\off-chain\ChangeNOW_crawler\client.py", line 76, in fetch_recent_transactions
+    raise RuntimeError("Failed to fetch ChangeNOW transactions") from last_error
+RuntimeError: Failed to fetch ChangeNOW transactions
+2026-05-31 23:50:38,304 ERROR [client] Request failed (1/5): 401 Client Error: Unauthorized for url: https://api.changenow.io/v1/transactions/2e506219cdbb320be06ba17a74bcc7c847a884f094c7cb5de84468f5b71b9cc8; sleep 5s
+2026-05-31 23:50:43,825 ERROR [client] Request failed (2/5): 401 Client Error: Unauthorized for url: https://api.changenow.io/v1/transactions/2e506219cdbb320be06ba17a74bcc7c847a884f094c7cb5de84468f5b71b9cc8; sleep 10s
+2026-05-31 23:50:54,404 ERROR [client] Request failed (3/5): 401 Client Error: Unauthorized for url: https://api.changenow.io/v1/transactions/2e506219cdbb320be06ba17a74bcc7c847a884f094c7cb5de84468f5b71b9cc8; sleep 20s
+2026-05-31 23:51:14,927 ERROR [client] Request failed (4/5): 401 Client Error: Unauthorized for url: https://api.changenow.io/v1/transactions/2e506219cdbb320be06ba17a74bcc7c847a884f094c7cb5de84468f5b71b9cc8; sleep 40s
+2026-05-31 23:51:55,457 ERROR [client] Request failed (5/5): 401 Client Error: Unauthorized for url: https://api.changenow.io/v1/transactions/2e506219cdbb320be06ba17a74bcc7c847a884f094c7cb5de84468f5b71b9cc8; sleep 80s
+2026-05-31 23:53:15,458 ERROR [crawler] Poll failed; retry after interval.
+Traceback (most recent call last):
+  File "D:\Blockchain\DO_AN\TRON-ICE\src\off-chain\ChangeNOW_crawler\client.py", line 59, in fetch_recent_transactions
+    return self._fetch_v1()
+           ~~~~~~~~~~~~~~^^
+  File "D:\Blockchain\DO_AN\TRON-ICE\src\off-chain\ChangeNOW_crawler\client.py", line 92, in _fetch_v1
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Asus\AppData\Local\Programs\Python\Python313\Lib\site-packages\requests\models.py", line 1028, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 401 Client Error: Unauthorized for url: https://api.changenow.io/v1/transactions/2e506219cdbb320be06ba17a74bcc7c847a884f094c7cb5de84468f5b71b9cc8
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\Blockchain\DO_AN\TRON-ICE\src\off-chain\ChangeNOW_crawler\crawler.py", line 136, in run
+    self.poll_once()
+    ~~~~~~~~~~~~~~^^
+  File "D:\Blockchain\DO_AN\TRON-ICE\src\off-chain\ChangeNOW_crawler\crawler.py", line 111, in poll_once
+    txs = self.client.fetch_recent_transactions(status=self.status_filter)
+  File "D:\Blockchain\DO_AN\TRON-ICE\src\off-chain\ChangeNOW_crawler\client.py", line 76, in fetch_recent_transactions
+    raise RuntimeError("Failed to fetch ChangeNOW transactions") from last_error
+RuntimeError: Failed to fetch ChangeNOW transactions
+2026-05-31 23:53:46,040 ERROR [client] Request failed (1/5): 401 Client Error: Unauthorized for url: https://api.changenow.io/v1/transactions/2e506219cdbb320be06ba17a74bcc7c847a884f094c7cb5de84468f5b71b9cc8; sleep 5s
+2026-05-31 23:53:51,626 ERROR [client] Request failed (2/5): 401 Client Error: Unauthorized for url: https://api.changenow.io/v1/transactions/2e506219cdbb320be06ba17a74bcc7c847a884f094c7cb5de84468f5b71b9cc8; sleep 10s
+2026-05-31 23:54:02,221 ERROR [client] Request failed (3/5): 401 Client Error: Unauthorized for url: https://api.changenow.io/v1/transactions/2e506219cdbb320be06ba17a74bcc7c847a884f094c7cb5de84468f5b71b9cc8; sleep 20s
+2026-05-31 23:54:22,776 ERROR [client] Request failed (4/5): 401 Client Error: Unauthorized for url: https://api.changenow.io/v1/transactions/2e506219cdbb320be06ba17a74bcc7c847a884f094c7cb5de84468f5b71b9cc8; sleep 40s
+2026-05-31 23:55:03,314 ERROR [client] Request failed (5/5): 401 Client Error: Unauthorized for url: https://api.changenow.io/v1/transactions/2e506219cdbb320be06ba17a74bcc7c847a884f094c7cb5de84468f5b71b9cc8; sleep 80s
+2026-05-31 23:56:23,315 ERROR [crawler] Poll failed; retry after interval.
+Traceback (most recent call last):
+  File "D:\Blockchain\DO_AN\TRON-ICE\src\off-chain\ChangeNOW_crawler\client.py", line 59, in fetch_recent_transactions
+    return self._fetch_v1()
+           ~~~~~~~~~~~~~~^^
+  File "D:\Blockchain\DO_AN\TRON-ICE\src\off-chain\ChangeNOW_crawler\client.py", line 92, in _fetch_v1
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Asus\AppData\Local\Programs\Python\Python313\Lib\site-packages\requests\models.py", line 1028, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 401 Client Error: Unauthorized for url: https://api.changenow.io/v1/transactions/2e506219cdbb320be06ba17a74bcc7c847a884f094c7cb5de84468f5b71b9cc8
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\Blockchain\DO_AN\TRON-ICE\src\off-chain\ChangeNOW_crawler\crawler.py", line 136, in run
+    self.poll_once()
+    ~~~~~~~~~~~~~~^^
+  File "D:\Blockchain\DO_AN\TRON-ICE\src\off-chain\ChangeNOW_crawler\crawler.py", line 111, in poll_once
+    txs = self.client.fetch_recent_transactions(status=self.status_filter)
+  File "D:\Blockchain\DO_AN\TRON-ICE\src\off-chain\ChangeNOW_crawler\client.py", line 76, in fetch_recent_transactions
+    raise RuntimeError("Failed to fetch ChangeNOW transactions") from last_error
+RuntimeError: Failed to fetch ChangeNOW transactions
+2026-05-31 23:56:54,267 ERROR [client] Request failed (1/5): 401 Client Error: Unauthorized for url: https://api.changenow.io/v1/transactions/2e506219cdbb320be06ba17a74bcc7c847a884f094c7cb5de84468f5b71b9cc8; sleep 5s
+2026-05-31 23:56:59,853 ERROR [client] Request failed (2/5): 401 Client Error: Unauthorized for url: https://api.changenow.io/v1/transactions/2e506219cdbb320be06ba17a74bcc7c847a884f094c7cb5de84468f5b71b9cc8; sleep 10s
+2026-05-31 23:57:10,420 ERROR [client] Request failed (3/5): 401 Client Error: Unauthorized for url: https://api.changenow.io/v1/transactions/2e506219cdbb320be06ba17a74bcc7c847a884f094c7cb5de84468f5b71b9cc8; sleep 20s
+2026-05-31 23:57:30,930 ERROR [client] Request failed (4/5): 401 Client Error: Unauthorized for url: https://api.changenow.io/v1/transactions/2e506219cdbb320be06ba17a74bcc7c847a884f094c7cb5de84468f5b71b9cc8; sleep 40s
+2026-05-31 23:58:11,505 ERROR [client] Request failed (5/5): 401 Client Error: Unauthorized for url: https://api.changenow.io/v1/transactions/2e506219cdbb320be06ba17a74bcc7c847a884f094c7cb5de84468f5b71b9cc8; sleep 80s
+2026-05-31 23:59:31,505 ERROR [crawler] Poll failed; retry after interval.
+Traceback (most recent call last):
+  File "D:\Blockchain\DO_AN\TRON-ICE\src\off-chain\ChangeNOW_crawler\client.py", line 59, in fetch_recent_transactions
+    return self._fetch_v1()
+           ~~~~~~~~~~~~~~^^
+  File "D:\Blockchain\DO_AN\TRON-ICE\src\off-chain\ChangeNOW_crawler\client.py", line 92, in _fetch_v1
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Asus\AppData\Local\Programs\Python\Python313\Lib\site-packages\requests\models.py", line 1028, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 401 Client Error: Unauthorized for url: https://api.changenow.io/v1/transactions/2e506219cdbb320be06ba17a74bcc7c847a884f094c7cb5de84468f5b71b9cc8
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\Blockchain\DO_AN\TRON-ICE\src\off-chain\ChangeNOW_crawler\crawler.py", line 136, in run
+    self.poll_once()
+    ~~~~~~~~~~~~~~^^
+  File "D:\Blockchain\DO_AN\TRON-ICE\src\off-chain\ChangeNOW_crawler\crawler.py", line 111, in poll_once
+    txs = self.client.fetch_recent_transactions(status=self.status_filter)
+  File "D:\Blockchain\DO_AN\TRON-ICE\src\off-chain\ChangeNOW_crawler\client.py", line 76, in fetch_recent_transactions
+    raise RuntimeError("Failed to fetch ChangeNOW transactions") from last_error
+RuntimeError: Failed to fetch ChangeNOW transactions
+2026-06-01 00:00:02,031 ERROR [client] Request failed (1/5): 401 Client Error: Unauthorized for url: https://api.changenow.io/v1/transactions/2e506219cdbb320be06ba17a74bcc7c847a884f094c7cb5de84468f5b71b9cc8; sleep 5s
+2026-06-01 00:00:07,584 ERROR [client] Request failed (2/5): 401 Client Error: Unauthorized for url: https://api.changenow.io/v1/transactions/2e506219cdbb320be06ba17a74bcc7c847a884f094c7cb5de84468f5b71b9cc8; sleep 10s
+2026-06-01 00:00:18,155 ERROR [client] Request failed (3/5): 401 Client Error: Unauthorized for url: https://api.changenow.io/v1/transactions/2e506219cdbb320be06ba17a74bcc7c847a884f094c7cb5de84468f5b71b9cc8; sleep 20s
+2026-06-01 00:00:38,669 ERROR [client] Request failed (4/5): 401 Client Error: Unauthorized for url: https://api.changenow.io/v1/transactions/2e506219cdbb320be06ba17a74bcc7c847a884f094c7cb5de84468f5b71b9cc8; sleep 40s
+2026-06-01 00:00:55,138 INFO [crawler] Received signal 2. Stopping...
+2026-06-01 00:01:19,186 ERROR [client] Request failed (5/5): 401 Client Error: Unauthorized for url: https://api.changenow.io/v1/transactions/2e506219cdbb320be06ba17a74bcc7c847a884f094c7cb5de84468f5b71b9cc8; sleep 80s
+2026-06-01 00:01:33,221 INFO [crawler] Received signal 2. Stopping...
+2026-06-01 00:01:33,689 INFO [crawler] Received signal 2. Stopping...
+2026-06-01 00:01:33,946 INFO [crawler] Received signal 2. Stopping...
+2026-06-01 00:01:34,182 INFO [crawler] Received signal 2. Stopping...
+2026-06-01 00:01:34,404 INFO [crawler] Received signal 2. Stopping...
+2026-06-01 00:01:34,643 INFO [crawler] Received signal 2. Stopping...
+2026-06-01 00:01:34,822 INFO [crawler] Received signal 2. Stopping...
+2026-06-01 00:02:05,294 INFO [crawler] Starting ChangeNOW crawler. Output: D:\Blockchain\DO_AN\TRON-ICE\src\off-chain\output\changenow_recent_requests.jsonl
+2026-06-01 00:02:05,295 INFO [crawler] Resume: 0 dedup keys from D:\Blockchain\DO_AN\TRON-ICE\src\off-chain\output\changenow_recent_requests.jsonl
+2026-06-01 00:02:06,351 ERROR [crawler] ChangeNOW API auth/permissions error; stopping crawler.
+2026-06-01 00:02:06,354 INFO [crawler] Crawler stopped. Stats: {'polls': 0, 'fetched': 0, 'appended': 0, 'skipped_duplicates': 0, 'errors': 0}
