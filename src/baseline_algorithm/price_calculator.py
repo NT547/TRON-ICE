@@ -18,6 +18,7 @@ from src.utils.configs import COINGECKO
 
 # Định nghĩa các endpoint và mapping token cho API
 COINGECKO_API = "https://api.coingecko.com/api/v3"  # Endpoint CoinGecko
+COINGECKO_API_KEY = COINGECKO
 BINANCE_API = "https://api.binance.com/api/v3"  # Endpoint Binance
 TOKEN_CG_IDS = {
     "TRX": "tron",
