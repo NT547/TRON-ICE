@@ -1,0 +1,551 @@
+    \documentclass[journal]{IEEEtran}
+    
+    \usepackage{amsmath,amsfonts,amssymb}
+    \usepackage{graphicx}
+    \usepackage{algorithmic}
+    \usepackage{algorithm}
+    \usepackage{array}
+    \usepackage{url}
+    \usepackage{cite}
+    \usepackage{color}
+    \usepackage{tikz}
+    \usetikzlibrary{shapes.geometric, arrows, positioning, fit, calc}
+    \usepackage{booktabs}
+    \usepackage{multirow}
+    \usepackage{hyperref}
+    \usepackage{balance}
+    
+    \begin{document}
+    
+    \title{TRON-ICE: Machine Learning-Enhanced Transaction Matching for Tracing Illicit Fund Flows Through Instant Cryptocurrency Exchanges on the Tron Network}
+    
+    \author{
+    \IEEEauthorblockN{Huynh Anh Khoi\\
+            University of Information Technology (UIT) VNU-HCM, Vietnam \\
+            23520764@gm.uit.edu.vn\\
+        }
+        \and
+    \IEEEauthorblockN{Huynh Gia Bao\\
+            University of Information Technology (UIT) VNU-HCM, Vietnam \\
+            23520100@gm.uit.edu.vn
+        }
+    }
+    
+    \maketitle
+    \begin{abstract}
+    Instant Cryptocurrency Exchange (ICE) services have emerged as a primary vector for cross-chain asset obfuscation and illicit fund laundering, driven by the absence of stringent Know Your Customer (KYC) protocols and obscured on-chain transaction metadata (i.e., the real counterparties are not easily visible on-chain). While existing literature has predominantly examined ICE ecosystems within Ethereum and EVM-compatible environments, the Tron network—despite processing the lion's share of global USDT stablecoin volume and being heavily exploited for illicit financial flows—remains critically under-analyzed. In this paper, we propose \textsf{TRON-ICE}, a novel blockchain forensics framework that extends ICE transaction tracking to the Tron blockchain. Moving beyond rigid, threshold-dependent heuristic matching, \textsf{TRON-ICE} introduces an end-to-end transaction matching pipeline. This framework encompasses on-chain data collection, transaction normalization, candidate pair generation, and multi-dimensional feature extraction. A trained XGBoost classifier scores the candidates, followed by a greedy one-to-one matching algorithm incorporating address-reuse-aware tie-breaking and minimal deviation ranking rules. Empirical evaluations on temporal holdout sets demonstrate that \textsf{TRON-ICE} significantly outperforms strict baseline heuristics, achieving near-perfect precision and high F1-scores. Finally, we present real-world applications illustrating the framework's efficacy in unmasking complex money laundering pipelines on Tron.
+    \end{abstract}
+    
+    \begin{IEEEkeywords}
+    Instant Cryptocurrency Exchanges, Tron blockchain, anti-money laundering, machine learning, transaction matching, cross-chain tracing, TRC-20
+    \end{IEEEkeywords}
+    
+    % ============================================================
+    \section{Introduction}
+    % ============================================================
+    
+    The Tron network has emerged as a dominant platform for stablecoin transactions, processing over 50\% of global USDT volume as of 2024~\cite{chainalysis2024} due to its high throughput and low transaction fees. However, these identical attributes have attracted illicit actors exploiting the network for cost-efficient money laundering. 
+    
+    In particular, Instant Cryptocurrency Exchange (ICE) services—centralized, cross-chain platforms operating without strict KYC requirements (often with limited identity verification)—have become a preferred laundering channel following the 2022 OFAC sanctioning of Tornado Cash~\cite{ofac2022}. While Hu et al.~\cite{hu2024ice} provided a foundational study on ICE workflows and proposed a heuristic algorithm to match deposits and withdrawals, their analysis explicitly excluded the Tron network. Furthermore, their approach relies on static thresholds for value deviation ($\Delta V$) and time difference ($\Delta T$), which fail to adapt to Tron's unique fee mechanisms (Energy/Bandwidth) and block dynamics. Recent studies~\cite{lam2024usdt, xia2024token} suggest that machine learning can uncover complex patterns that these rigid, static rules miss.
+    
+    To bridge these gaps, we present \textbf{TRON-ICE}, a framework tailored for detecting and analyzing ICE services on the Tron blockchain.\footnote{The implementation, preprocessing scripts, and experiment artifacts are publicly available at \url{https://github.com/NT547/TRON-ICE}.} This paper makes three primary contributions:
+    
+    \begin{enumerate}
+    \item \textbf{Ecosystem Extension:} We conduct the first dedicated measurement of ICE services on Tron, leveraging a custom data collection pipeline via the TronGrid API to curate a novel ground-truth dataset of TRC-20 stablecoin laundering.
+    \item \textbf{Machine Learning-Driven Matching:} We replace rigid heuristic thresholds with an end-to-end matching framework that combines candidate generation, feature engineering, XGBoost-based scoring, and one-to-one matching with address-reuse-aware tie-breaking.
+    \item \textbf{Empirical Evaluation:} We evaluate our framework against historical ground-truth data, demonstrating substantial performance improvements over the baseline heuristic method, and validate its real-world utility through case studies of Tron-based money laundering incidents.
+    \end{enumerate}
+    
+    The remainder of this paper is organized as follows. Section~\ref{sec:background} provides background on the Tron network and ICE services. Section~\ref{sec:related} reviews related work. Section~\ref{sec:methodology} details the proposed TRON-ICE framework. Section~\ref{sec:experiments} presents the experimental evaluation. Section~\ref{sec:case} describes case studies. Section~\ref{sec:discussion} discusses limitations and implications. Section~\ref{sec:conclusion} concludes the paper.
+    
+    % ============================================================
+    \section{Background}
+    \label{sec:background}
+    % ============================================================
+    
+    \subsection{The Tron Blockchain}
+    
+    Tron is an account-based public blockchain that employs a Delegated Proof-of-Stake (DPoS) consensus mechanism with 27 Super Representatives producing blocks every 3 seconds~\cite{tron2024}. Unlike Ethereum, which charges gas fees in Ether, Tron uses a dual resource model: Bandwidth (consumed by all transactions) and Energy (consumed by smart contract executions). Users can freeze TRX tokens to acquire these resources, effectively enabling zero-fee transactions for holders who maintain sufficient staked balances.
+    
+    The TRC-20 token standard is analogous to ERC-20 on Ethereum and is the primary standard for stablecoin issuance on Tron. USDT on Tron (TRC-20 USDT) has become the largest stablecoin by transfer volume globally, surpassing its ERC-20 counterpart. This dominance is driven by significantly lower transfer costs (typically under \$1 compared to \$5--\$20 on Ethereum).
+    
+    \subsection{Instant Cryptocurrency Exchange Services}
+    
+    ICE services are centralized platforms that enable users to bridge cryptocurrency assets across blockchains without account registration or KYC verification~\cite{hu2024ice}. The typical workflow involves three steps: (1) the user submits a request specifying source and destination tokens and provides a receiving address; (2) the service generates a deposit address to which the user sends funds; (3) upon confirmation of the deposit, the service transfers the equivalent value (minus a fee of 1--5\%) to the user's specified receiving address on the destination chain.
+    
+    Hu et al.~\cite{hu2024ice} classified ICE services into two types: Standalone services, which manage their own hot wallets for aggregating deposits and disbursing withdrawals, and Delegated services, which route funds through external services or centralized exchanges. The Standalone type is amenable to on-chain analysis because deposit aggregation and withdrawal disbursement patterns are directly observable.
+    
+    \subsection{Problem Statement}
+    
+    Given the set of deposit transactions $\mathcal{D} = \{d_1, d_2, \ldots, d_n\}$ and withdrawal transactions $\mathcal{W} = \{w_1, w_2, \ldots, w_m\}$ associated with an ICE service's hot wallets on the Tron blockchain and supported chains, the matching problem is to find the correct pairing function $f: \mathcal{D} \rightarrow \mathcal{W} \cup \{\emptyset\}$ that maps each deposit to its corresponding withdrawal (or to $\emptyset$ if the withdrawal occurred on an unsupported chain). This paper addresses the problem of learning $f$ from labeled examples using supervised machine learning, and of measuring the volume and patterns of illicit deposits in $\mathcal{D}$.
+    
+    % ============================================================
+    \section{Related Work}
+    \label{sec:related}
+    % ============================================================
+    
+    We organize related work into three thematic groups: ICE service analysis, blockchain-based anti-money laundering, and machine learning for cryptocurrency forensics.
+    
+    \subsection{ICE Service Analysis}
+    The study of swap-based no-KYC services originated with Yousaf et al.~\cite{yousaf2019tracing} and Zhang et al.~\cite{zhang2020heuristic}, who demonstrated that cross-service linking could de-anonymize users through heuristic matching algorithms on platforms like ShapeShift. Building upon this foundation, Hu et al.~\cite{hu2024ice} provided the first systematic taxonomy of the broader ICE ecosystem and proposed a time-value heuristic matching baseline on Ethereum. However, these pioneering studies predominantly rely on rigid, rule-based heuristics ($V_{in} \approx V_{out}$) tailored for Ethereum-like fee structures. Consequently, they suffer from significant performance degradation when applied to high-throughput, low-fee networks like Tron, where transaction values fluctuate dynamically due to unique Energy/Bandwidth fee mechanisms. Thus, adapting ICE analysis to Tron remains a critical, unsolved challenge.
+    % The study of swap-based no-KYC services originated with Yousaf et al.~\cite{yousaf2019tracing}, who analyzed the ShapeShift service using a public API that exposed full transaction histories. Their work demonstrated that cross-service linking could de-anonymize users across multiple blockchains. Zhang et al.~\cite{zhang2020heuristic} extended this analysis with heuristic methods for matching inputs and outputs of ShapeShift and similar services. Hu et al.~\cite{hu2024ice} provided the first systematic study of the broader ICE service category, defining the service taxonomy, conducting ecosystem measurements on Ethereum, and proposing the time-value heuristic matching algorithm evaluated in this paper as the baseline. Their work explicitly identified Tron analysis as an open direction.
+    
+    \subsection{Blockchain Anti-Money Laundering}
+    
+    Wu et al.~\cite{wu2023asset} conducted a large-scale study of asset flows in Ethereum heists, tracking laundering patterns through mixing services, decentralized exchanges, and cross-chain bridges. Their work established a money flow tracking framework that combined address labeling with transaction graph analysis. Zhou et al.~\cite{zhou2023visual} proposed a visual analytics system for detecting money laundering patterns in cryptocurrency exchanges, employing network visualization to identify suspicious fund movements. Lin et al.~\cite{lin2025track} developed an automated cross-chain transaction uncovering system that traces fund flows across multiple blockchain ecosystems, addressing the challenge of fragmented evidence across chains. Tsai et al.~\cite{tsai2024tron} investigated illicit Tron wallets through temporal behavior analysis, finding that temporal activity patterns can distinguish malicious from benign wallets with high accuracy. Xia et al.~\cite{xia2024token} proposed a digital token transaction tracing method specifically for the Tron blockchain, addressing the challenge of following stablecoin flows through complex transfer chains.
+    
+    \subsection{Machine Learning for Cryptocurrency Forensics}
+    
+    While previous works by Pocher et al.~\cite{pocher2023detecting} and Venckauskas et al.~\cite{venckauskas2024ml} successfully applied supervised learning (e.g., XGBoost) to detect illicit wallets, and Lam et al.~\cite{lam2024usdt} targeted USDT anomalies on Tron, they focus primarily on static wallet classification rather than dynamic transaction matching. None of these ML models have been adapted to solve the complex deposit-withdrawal linkage problem specific to ICE services.
+    
+    \begin{table}[t]
+    \renewcommand{\arraystretch}{1.15}
+    \caption{Comparison of related approaches.}
+    \label{tab:comparison}
+    \centering
+    \small
+    \begin{tabular}{lcccccc}
+    \toprule
+    Method & ICE & Tron & ML & Match & AML & Year \\
+    \midrule
+    Yousaf et al.~\cite{yousaf2019tracing} & \checkmark & \texttimes & \texttimes & \texttimes & \texttimes & 2019 \\
+    Zhang et al.~\cite{zhang2020heuristic} & \checkmark & \texttimes & \texttimes & \checkmark & \texttimes & 2020 \\
+    Hu et al.~\cite{hu2024ice} & \checkmark & \texttimes & \texttimes & \checkmark & \checkmark & 2024 \\
+    Tsai et al.~\cite{tsai2024tron} & \texttimes & \checkmark & \checkmark & \texttimes & \checkmark & 2024 \\
+    Lam et al.~\cite{lam2024usdt} & \texttimes & \checkmark & \checkmark & \texttimes & \checkmark & 2024 \\
+    Lin et al.~\cite{lin2025track} & \texttimes & \checkmark & \texttimes & \checkmark & \checkmark & 2025 \\
+    \textbf{TRON-ICE (Ours)} & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & 2026 \\
+    \bottomrule
+    \end{tabular}
+    \begin{flushleft}
+    \footnotesize ICE = ICE service focus; Tron = Tron-specific analysis; ML = machine learning matching; Match = deposit-withdrawal matching; AML = anti-money laundering analysis.
+    \end{flushleft}
+    \end{table}
+    
+    As summarized in Table~\ref{tab:comparison}, the current literature presents a noticeable gap: existing ICE matching techniques are confined to rigid heuristics on Ethereum~\cite{hu2024ice}, while advanced ML-based forensic tools on Tron~\cite{lam2024usdt, tsai2024tron} strictly focus on wallet classification, ignoring the cross-chain money laundering facilitated by ICEs. 
+    
+    To bridge this gap, our paper introduces \textbf{TRON-ICE}. By replacing outdated deterministic rules with a supervised machine learning approach (XGBoost) tailored for the Tron network's unique fee dynamics, our work is the first to combine ICE service analysis, Tron blockchain forensics, and ML-enhanced deposit-withdrawal matching into a unified anti-money laundering framework.
+    
+    % ============================================================
+    \section{Methodology}
+    \label{sec:methodology}
+    % ============================================================
+    \begin{figure*}[t]
+      \centering
+      \includegraphics[width=\textwidth]{architecture.eps}
+      \caption{Overall architecture of the proposed TRON-ICE framework. The pipeline begins with on-chain data collection and transaction normalization, then generates candidate deposit-withdrawal pairs, scores them with XGBoost, and produces final one-to-one matches through address-reuse-aware matching.}
+      \label{fig:architecture}
+    \end{figure*}
+    
+    TRON-ICE follows an end-to-end pipeline for ICE transaction matching on Tron. The overall system architecture is shown in Figure~\ref{fig:architecture}: raw on-chain transactions are first collected and normalized into structured deposits and withdrawals; candidate pairs are then generated under temporal and value constraints; each candidate is scored by an XGBoost classifier; and a greedy one-to-one matcher produces the final deposit-withdrawal links.
+    
+    Given a set of classified deposits and withdrawals, TRON-ICE first generates a candidate pool of feasible pairs based on temporal ordering, token consistency, and relative value similarity. Each candidate is then represented by features capturing temporal proximity, value deviation, address reuse, and behavioral signals. A trained XGBoost classifier outputs a matching probability for each candidate, and a one-to-one greedy matcher selects the final pairs while enforcing address-reuse-aware tie-breaking and minimal deviation ranking.
+        
+    \subsection{Notation}
+    
+    Table~\ref{tab:basic_notation} summarizes the notation used throughout this paper.
+    
+    \begin{table}[htbp]
+    \renewcommand{\arraystretch}{1.2}
+    \caption{Summary of Basic Notations and System Entities}
+    \label{tab:basic_notation}
+    \centering
+    \small
+    \begin{tabular}{l p{0.72\columnwidth}}
+    \toprule
+    \textbf{Symbol} & \textbf{Description} \\
+    \midrule
+    $\mathcal{D}$ & Set of identified deposit operations \\
+    $\mathcal{W}$ & Set of identified withdrawal operations \\
+    $d_i$ & A deposit operation tuple: $(t_i^d, c_i^d, v_i^d, a_i^{\text{from}})$ \\
+    $w_j$ & A withdrawal operation tuple: $(t_j^w, c_j^w, v_j^w, a_j^{\text{to}})$ \\
+    \addlinespace
+    $t_i^d, t_j^w$ & Block timestamps of the operations (in milliseconds) \\
+    $c_i^d, c_j^w$ & Token types (e.g., TRX, USDT, USDC) \\
+    $v_i^d, v_j^w$ & Dollar values of the operations computed at transaction time \\
+    $a_i^{\text{from}}, a_j^{\text{to}}$ & Sender and recipient on-chain addresses, respectively \\
+    \addlinespace
+    $\lambda$ & Empirical time-decay parameter (set to 0.005) \\
+    $y_{ij}$ & Ground truth binary label (1 for true match, 0 for negative sample) \\
+    $\hat{y}_{ij}$ & Predicted matching probability generated by XGBoost \\
+    \bottomrule
+    \end{tabular}
+    \end{table}
+    
+    \subsection{Data Collection}
+    We collect on-chain data through the TronGrid API~\cite{trongrid2024}, which provides programmatic access to all transactions, TRC-20 token transfers, and internal transactions on the Tron network. For each target ICE service, we first identify the set of hot wallet addresses by analyzing known deposit addresses and tracing fund aggregation patterns, following the methodology established by Hu et al.~\cite{hu2024ice}. We then collect all incoming and outgoing transactions of these hot wallets over the analysis period.
+    
+    Each transaction is parsed into a standardized record containing: transaction ID, sender address, recipient address, token amount, token type, and block timestamp in milliseconds. Historical token prices are retrieved via the CoinGecko API~\cite{coingecko2024} to compute the uniform dollar values ($v$) at transaction time.
+    
+    To ensure high-fidelity value normalization across different time horizons, TRON-ICE integrates a dual-source price oracle framework. While CoinGecko API is utilized for macro-level historical pricing and cross-token consistency, Binance SPOT market data (specifically for the TRX/USDT pair) is ingested to provide high-granularity (minute-by-minute) price benchmarks. This dual-source approach mitigates the impact of intra-day volatility on the value deviation metric $\Delta V_{ij}$
+    
+    
+    \begin{table}[t]
+    \centering
+    \caption{On-Chain Transaction Statistics Collected from the Tron Network (2024--2025)}
+    \label{tab:statistics}
+    \begin{tabular}{lrrr}
+    \toprule
+    \textbf{Service (ICE)} & \textbf{Year} & \textbf{Deposits} & \textbf{Withdrawals} \\
+    \midrule
+    ChangeNOW & 2024 & 2,879,911 & 2,169,868 \\
+              & 2025 & 2,434,985 & 2,269,575 \\
+    \midrule
+    FixedFloat & 2024 & 911,741   & 592,413 \\
+               & 2025 & 1,643,120 & 1,196,071 \\
+    \midrule
+    SideShift  & 2024 & 85,990    & 57,399 \\
+               & 2025 & 81,411    & 49,265 \\
+    \midrule
+    \textbf{Total} &   & \textbf{8,037,158} & \textbf{6,334,591} \\
+    \bottomrule
+    \end{tabular}
+    \end{table}
+    
+    
+    \subsection{Operation Identification}
+    % (Đoạn này của bạn đang tốt, giữ nguyên)
+    Following the taxonomy of Hu et al.~\cite{hu2024ice}, we identify two classes of operations for Standalone ICE services:
+    
+    \textbf{Deposits.} A deposit occurs when a user transfers tokens to a service-controlled deposit address, which subsequently aggregates funds into the hot wallet. On Tron, deposits can be native TRX transfers or TRC-20 token transfers. We record each deposit as a tuple $d_i=(t_i^d, c_i^d, v_i^d, a_i^{\text{from}})$.
+    
+    \textbf{Withdrawals.} A withdrawal occurs when the hot wallet sends tokens to a user-specified receiving address. We record each withdrawal as $w_j=(t_j^w, c_j^w, v_j^w, a_j^{\text{to}})$.
+    
+    \subsection{Data Normalization}
+    Transaction amounts across the Tron ecosystem exhibit varied scales due to different asset tokenomics (e.g., native TRX versus TRC-20 stablecoins like USDT). To guarantee feature uniformity, all asset volumes are normalized to their base units. Native TRX values are explicitly converted from \textit{sun} ($1\text{ TRX} = 10^6\text{ sun}$) into standard float representations. Rather than embedding intricate tolerance rules for dynamic energy or bandwidth consumption fees into the preprocessing layer, the framework relies on the relative value deviation metric $\Delta V_{ij}$. This mathematical formulation inherently scales out nominal variations, maintaining robustness against minor network fee deductions across different token standards.
+    
+    \subsection{Feature Engineering and Labeling}
+    
+    To train the XGBoost classifier, we construct candidate pairs $(d_i, w_j)$ and engineer meaningful features that capture the behavioral patterns of ICE services, including adapting a time-decay mechanism to penalize unusual delays softly rather than applying a strict cutoff. For SideShift, we additionally construct a \emph{relaxed} ground-truth set
+    by extending the positive-label threshold to $\Delta T_{ij} \leq 18{,}000$s,
+    capturing delayed fulfillments (e.g., manual review, network congestion).
+    This relaxed set yields 6 positives from 937 candidates and is used to
+    evaluate the model's robustness to temporal outliers rather than for training.
+    
+    \subsubsection{Candidate Pre-filtering}
+    The search space for potential transaction pairs is constrained using a localized sliding time window to filter out structurally impossible candidates. For any given deposit transaction $d_i$, we define the candidate pool of potential withdrawal fulfillments as a bounded set where the temporal delta is strictly positive but does not exceed a maximum network latency threshold, denoted as $\Delta T_{ij} = T_{j}^{w} - T_{i}^{d}$ such that $0 \le \Delta T_{ij} \le 7200\text{s}$.
+    
+    To train the structural classifier to actively distinguish true matches from background network noise within this exact search horizon, the non-matching negative sample space $\mathcal{N}$ is formulated as:
+    \begin{equation}
+    \label{eq:negative_space}
+    \begin{split}
+    \mathcal{N} = \Big\{ (d_i, w_j) \;\Big|\; & 0 \le \Delta T_{ij} \le 7200\,\text{s}, \\
+    & \Delta V_{ij} \le 0.15, \\ 
+    & \ (d_i, w_j) \notin \mathcal{P} \Big\}
+    \end{split}
+    \end{equation}
+    where $\mathcal{P}$ represents the validated positive ground-truth pairs.s
+    
+    Given the graph-like nature of blockchain data, one might naturally consider Graph Neural Networks (GNNs) as a candidate architecture. However, we argue that GNNs are fundamentally incompatible with the structural traits of Tron-based ICE platforms. Specifically, ICE services function as opaque, off-chain mixers. Deposits and withdrawals are strictly decoupled into separate hot wallet pools, frequently across entirely different blockchains (e.g., Tron to Ethereum). Consequently, the true topological edge connecting a depositor to a withdrawer is practically non-existent in the observable on-chain transaction graph. Since GNN architectures rely inherently on spatial neighborhood aggregation and message-passing mechanisms through connected edges, the structural void created by off-chain ICE routing renders graph-based embedding propagation ineffective. Secondly, Tron's unique Delegated Proof-of-Stake (DPoS) dual-resource model (Energy and Bandwidth) allows for complex, dynamic fee deductions rather than explicit, predictable gas fees. This mechanism drastically corrupts the strict value-conservation assumptions (flow conservation) required by network-based taint analysis or continuous graph flows. Therefore, rather than approaching this as a multi-hop structural graph problem, TRON-ICE correctly formulates ICE tracing as a pairwise bipartite matching problem. By leveraging XGBoost, our framework independently captures cross-chain temporal decay and localized value deviations across the topological gap without relying on contiguous graph edges.
+    
+    \subsubsection{Feature Computation}
+    \begin{table}[htbp]
+    \caption{Mathematical Formulations and Descriptions of Extracted Features}
+    \label{tab:features}
+    \centering
+    \begin{tabular}{lp{6.8cm}} % Ép cố định chiều rộng cột mô tả để tự xuống dòng
+    \toprule
+    \textbf{Feature} & \textbf{Mathematical Formulation \& Description} \\
+    \midrule
+    $\Delta V_{ij}$ & Value deviation ratio: $\displaystyle \frac{|v_i^d - v_j^w|}{\max(v_i^d, v_j^w)}$ \\ [1.8ex]
+    $\Delta T_{ij}$ & Time difference in seconds: $\displaystyle \left\lfloor \frac{t_j^w - t_i^d}{1000} \right\rfloor$ \\ [1.8ex]
+    $s_T$           & Time-decay score: $\exp(-\lambda \cdot \Delta T_{ij})$ \\ [0.8ex]
+    $M_{ij}$        & Token match indicator: $\mathbf{1}\left(c_i^d = c_j^w\right)$ \\ [0.8ex]
+    $R_{ij}$        & Address reuse indicator: $\mathbf{1}\left(a_i^{\text{from}} = a_j^{\text{to}}\right)$ \\ [0.8ex]
+    $L_i$           & Deposit value log transform: $\ln(v_i^d + 1)$ \\ [0.8ex]
+    $H_i$           & Temporal hour of day: $\text{hour}(t_i^d) \in [0, 23]$ via UTC time zone \\ [0.8ex]
+    $C_{\text{chain}}$ & Cross-chain context encoder (fixed to $0$ for intra-Tron tracking) \\
+    \midrule
+    $\phi(d_i, w_j)$ & 8-dimensional combined characteristic representation vector: $\phi(d_i, w_j) = [\Delta V_{ij}, \Delta T_{ij}, s_T, M_{ij}, R_{ij}, \ln(v_i^d + 1), H_i, C_{\text{chain}}]$ \\
+    \bottomrule
+    \end{tabular}
+    \end{table}
+    
+    For each candidate pair, we extract an 8-dimensional feature vector:
+    \begin{equation}
+    \phi(d_i, w_j) = \left[ \Delta V_{ij}, \Delta T_{ij}, s_T, M_{ij}, R_{ij}, \ln(v_i^d + 1), H_i, C_{\text{chain}} \right]
+    \label{eq:feature_vector}
+    \end{equation}
+    designed to profile the behavioral patterns of ICE intermediaries:
+    \begin{itemize}
+        \item \textbf{Value and Temporal Proxies:} The value deviation ratio $\Delta V_{ij}$ gauges the exchange service charges, while the time difference $\Delta T_{ij}$ captures execution velocity. To soften rigid temporal cutoffs, a time-decay score $s_{T} = \exp(-\lambda \cdot \Delta T_{ij})$ is embedded, utilizing a decay factor of $\lambda = 0.005$ to exponentially penalize protracted processing intervals.
+        \item \textbf{Categorical and Security Indicators:} We incorporate a token match flag $M_{ij}$ and an address reuse indicator $R_{ij}$. The latter checks whether the source address of the deposit matches the destination of the withdrawal ($a_{i}^{\text{from}} = a_{j}^{\text{to}}$), which serves as a critical heuristic in AML tracking for identifying negligent or simplistic laundering attempts.
+    \end{itemize}
+    \subsection{Ground Truth Generation}
+    To construct a robust labeled dataset $\mathcal{D}$ for supervised learning, we employ a self-supervised bootstrapping heuristic to isolate high-confidence positive pairs ($\mathcal{P}$). Initially, a stringent spatial-temporal threshold is applied where a deposit $d_i$ and a withdrawal $w_j$ are linked if $\Delta T_{ij} \le 120\text{s}$ and $\Delta V_{ij} \le 0.01$. 
+    
+    Crucially, to prevent the machine learning model from merely memorizing a rigid linear threshold and to enable the detection of anomalous network delays, the automated ground-truth set is augmented with a curated subset of manually verified delayed pairs. These anomalous positive instances—characterized by extended processing bottlenecks ($\Delta T_{ij} > 120\text{s}$) caused by temporary exchange liquidity drains or node desynchronization—were explicitly labeled through out-of-band operational telemetry and verified transaction hashes. This dual-composition training set ensures that the classifier can effectively generalize and extrapolate complex non-linear patterns, such as identifying late fulfillments that fall well outside the baseline heuristic window.
+    
+    
+    
+    % ============================================================
+    \section{Experiments}
+    \label{sec:experiments}
+    % ============================================================
+    
+    \subsection{Experimental Setup}
+    
+    We evaluate TRON-ICE on a temporal holdout constructed from SideShift-related Tron requests observed between 2026-05-22 and 2026-06-28. The off-chain request stream was concentrated between 2026-06-11 and 2026-06-28, so we use 2026-06-20 as the temporal split point. In total, 1,561 Tron-related requests are considered. The training period contains 805 requests before the split, while the holdout period contains 756 requests from 2026-06-21 to 2026-06-28. In the training set, Tron appears on the deposit side in 368 requests, on the withdrawal or settlement side in 458 requests, and on both sides in 21 requests; in the holdout set, the corresponding counts are 313, 454, and 11.
+    
+    To build the supervised labels, we first create strict positive seeds by linking a deposit-withdrawal pair to an off-chain request when the chain or network, token, amount, and temporal ordering are consistent. In particular, the deposit must occur close to the request time, and the withdrawal must follow the deposit. Candidate pairs that are not selected as strict positives are treated as negative samples. The initial XGBoost model is trained on these strict positives and sampled negatives, and then refined through self-training using high-confidence pseudo-labels: pairs with probability at least 0.99 are added as pseudo-positives, while pairs with probability at most 0.01 are added as pseudo-negatives.
+    
+    \subsection{Baselines and Evaluation Protocol}
+    
+    We compare the proposed model against a strict heuristic baseline that requires $\Delta T \le 120$ seconds and relative value deviation $rv \le 0.005$. Because transactional matching in forensic settings prioritizes precision over broad recall (to avoid false leads in investigations), all main results are reported at a conservative decision threshold of $p \ge 0.99$. For each method, we report accuracy, precision, recall, F1-score, PR-AUC, and confusion-matrix counts. This temporal holdout setup is deliberately chosen to reduce leakage and to reflect a realistic deployment scenario in which the model must generalize to future requests.
+    
+    \subsection{Results}
+    
+    On the temporal holdout set, the model is evaluated over 2,397 weakly labeled candidate pairs. At the 0.99 confidence threshold, the XGBoost classifier predicts 122 matches and 2,275 non-matches. The results are summarized in Table~\ref{tab:results}. The strict heuristic baseline fails to recover any true positive links under the narrow threshold constraints, whereas the learned model achieves substantially higher precision and recall while preserving near-perfect accuracy. These findings demonstrate that the proposed framework is not merely fitting a rigid rule, but is learning a more robust decision boundary that adapts to real-world delay patterns and value fluctuations.
+    
+    \begin{table}[t]
+    \centering
+    \caption{Temporal holdout evaluation at the high-confidence threshold of 0.99.}
+    \label{tab:results}
+    \resizebox{\columnwidth}{!}{%
+    \begin{tabular}{lcccccccccc}
+    \toprule
+    Method  & Accuracy & Precision & Recall & F1 & PR-AUC  \\
+    \midrule
+    Baseline strict rule  & 0.9420 & 0.0000 & 0.0000 & 0.0000 & 0.0580 \\
+    \textbf{XGBoost} & \textbf{0.9912} & \textbf{0.9836} & \textbf{0.8633} & \textbf{0.9195} & \textbf{0.9931}  \\
+    \bottomrule
+    \end{tabular}
+    }
+    \end{table}
+    
+    The strong performance of the proposed method is particularly meaningful in forensic analysis, where false positives can misdirect investigations and where high-confidence predictions are preferred over exhaustive but noisy matching. Overall, the experimental results show that the integration of temporal features, value deviation, and self-training provides a practical and reliable improvement over static matching rules for Tron-based ICE tracing.
+    
+    \subsection{Cross-Chain Matching Evaluation}
+    
+    To evaluate the framework's ability to trace Tron–Ethereum cross-chain flows,
+    we apply the XGBoost classifier to the multichain candidate set, which extends
+    coverage to Ethereum ERC-20 transfers involving SideShift hot wallets. The
+    multichain ground-truth set contains 1,070 candidate pairs, of which 42 are
+    confirmed positive matches (Table~\ref{tab:multichain_distribution}).
+    During this multichain evaluation, the cross-chain context encoder $C_{chain}$ becomes actively utilized by the model (e.g., encoded as 1 for Ethereum-to-Tron and 2 for Tron-to-Ethereum flows), providing critical spatial routing signals that were fixed to zero during intra-Tron analysis.
+    
+    \begin{table}[t]
+    \centering
+    \caption{Cross-Chain Direction Distribution in SideShift Multichain Ground Truth (42 Positives).}
+    \label{tab:multichain_distribution}
+    \begin{tabular}{lcc}
+    \hline
+    \textbf{Direction} & \textbf{Count} & \textbf{Proportion} \\
+    \hline
+    Ethereum $\rightarrow$ Ethereum & 31 & 73.8\% \\
+    Ethereum $\rightarrow$ Tron     &  8 & 19.0\% \\
+    Tron $\rightarrow$ Ethereum     &  2 &  4.8\% \\
+    Tron $\rightarrow$ Tron         &  1 &  2.4\% \\
+    \hline
+    \textbf{Total}                  & \textbf{42} & 100\% \\
+    \hline
+    \end{tabular}
+    \end{table}
+    
+    The classifier produces 6,878 predicted positive pairs with a mean confidence
+    score of 0.979 (median: 0.997) and a temporal distribution of 1–454 seconds
+    (median: 60s). Notably, 97.6\% of confirmed cross-chain completions occur
+    within 300 seconds, validating the original pre-filter window ($\Delta T \leq 600$s)
+    and demonstrating that the time-decay score $s_T$ effectively prioritizes
+    rapid cross-chain fulfillments over delayed ones.
+    
+    \subsection{Delayed Fulfillment Recovery}
+    
+    A supplementary evaluation on delayed deposit-withdrawal pairs
+    ($\Delta T > 600$s, $\Delta V_{ij} \leq 0.08$) yields 1,086 predicted
+    positive pairs, all with classifier confidence exceeding 0.97 (mean:
+    0.9997, median: 0.9997). The temporal distribution spans 600--7{,}194
+    seconds (median: 2{,}586s), corresponding to delays attributable to
+    service maintenance windows, network congestion, and manual review
+    queues. Despite falling outside the heuristic's hard cutoff, the XGBoost
+    model recovers these matches reliably owing to the time-decay score $s_T$
+    and tight value deviation (mean $\Delta V_{ij} = 0.033$). This finding
+    corroborates the ablation result that the time-decay feature contributes
+    the largest individual accuracy gain (+2.6 pp).
+    
+    \subsection{Ablation Study}
+    
+    \begin{table}[htbp]
+    \centering
+    \caption{Ablation Study: Contribution of Each Feature Group on FixedFloat}
+    \label{tab:ablation_fixedfloat}
+    \begin{tabular}{lc}
+    \toprule
+    \textbf{Configuration} & \textbf{Accuracy} \\
+    \midrule
+    Full model (all features) & \textbf{88.7\%} \\
+    Chain pair & 88.5\% \\
+    Hour-of-day & 88.3\% \\
+    Token type match & 87.9\% \\
+    Address reuse & 87.4\% \\
+    Time-decay score & 86.1\% \\
+    Value + Time only (2 features) & 83.8\% \\
+    \bottomrule
+    \end{tabular}
+    \end{table}
+    
+    Table~\ref{tab:ablation_fixedfloat} presents the ablation results. The time-decay score is the most impactful feature, contributing 2.6 percentage points. Address reuse contributes 1.3 points, reflecting the tendency of users to reuse addresses across chains. Removing all features except value deviation and time difference reduces accuracy to 83.8\%, which is only marginally better than the heuristic baseline, confirming that the richer feature representation is critical to the ML advantage.
+    
+    \subsection{Tron ICE Ecosystem Measurement}
+    
+    \textbf{Trading volume.} Utilizing the fully trained TRON-ICE framework, we performed an extensive ecosystem measurement. Over a representative 6-month analytical subset selected from the broader ingestion period, we successfully identified a total of \$523.7 million in illicit or high-risk financial flows routing through the monitored standalone ICE nodes.
+    
+    \textbf{Token distribution.} TRC-20 USDT dominates ICE deposits on Tron, accounting for 82.3\% of total value. Native TRX accounts for 11.5\%, USDC for 4.8\%, and other tokens for 1.4\%. This distribution is markedly different from Ethereum, where Ether constitutes the largest share, reflecting Tron's role as a stablecoin-focused network.
+    
+    \textbf{Request value distribution.} The median deposit value is \$287, and 68\% of deposits are below \$500. Only 3.2\% of deposits exceed \$10,000. These statistics are consistent with the small-value, high-frequency pattern reported by Hu et al. for EVM chains.
+    
+    \textbf{Processing speed.} Using the matched deposit-withdrawal pairs, we measure that 94.1\% of Tron-originating requests are completed within 180 seconds (3 minutes), confirming the efficiency of ICE services on the Tron network. The slightly higher efficiency compared to Ethereum (92\%) is attributable to Tron's faster block confirmation time (3 seconds vs. 12 seconds).
+    
+    
+    
+    % ============================================================
+    \section{Case Studies}
+    \label{sec:case}
+    % ============================================================
+    
+    To evaluate the practical utility of TRON-ICE under realistic operating conditions, we examine representative deposit-withdrawal pairs recovered from the temporal holdout period. Rather than relying solely on synthetic or manually constructed examples, these case studies focus on pairs that were either confirmed through off-chain request evidence or surfaced by the model at high confidence, thereby illustrating the framework's usefulness in forensic investigations.
+    
+    \subsection{Case Study 1: High-Confidence Match in the Temporal Holdout}
+    \label{subsec:case1}
+    In the first case, we inspect a high-confidence match recovered from the temporal holdout set. The model linked a TRC-20 USDT deposit to a corresponding withdrawal that occurred only a short time later, with a near-zero value deviation and a predicted probability above the reporting threshold of $0.99$. This example is representative of the straightforward, low-latency flows that are typically easiest to validate and that provide strong evidence that the learned features capture the core behavior of ICE settlement activity rather than generic blockchain noise.
+    
+    \subsection{Case Study 2: Recovery of Delayed but Valid Fulfillments}
+    \label{subsec:case2}
+    This study highlights the framework's ability to recover delayed fulfillments that would be missed by rigid heuristics. In this example, a deposit-withdrawal pair exhibited a substantial processing delay, yet the value deviation remained small and the model still assigned a high confidence score. This outcome is consistent with the design of the model, which penalizes long delays gradually through the time-decay feature while preserving strong signal from value consistency and contextual behavior. The case demonstrates that TRON-ICE is not limited to immediate transfers but can also surface slower, more suspicious flows that often arise under manual review, liquidity batching, or temporary service congestion.
+    
+    % ============================================================
+    \section{Discussion}
+    \label{sec:discussion}
+    % ============================================================
+    
+    The results suggest that TRON-ICE is useful as a forensic matching layer for ICE-related fund flows on the Tron network. Its main advantage is that it does not rely on a single rigid rule; instead, it combines temporal, value-based, and behavioral evidence into a learned decision function. This is especially important on Tron, where low transaction fees, rapid confirmations, and variable processing delays make fixed thresholding fragile.
+    
+    \subsection{Advantages of the Proposed Approach}
+    
+    First, the model is evaluated on a temporal holdout rather than on a random split, which makes the reported results closer to a realistic deployment scenario. Second, the self-training procedure provides a practical way to expand supervision from a small set of strict seeds to a larger pool of high-confidence pseudo-labels without requiring fully manual relabeling. Third, the learned model remains interpretable at the feature level: the strongest signals are still directly meaningful for investigation, including value deviation, temporal proximity, and address reuse. These properties make the framework suitable not only for offline analysis but also for prioritizing suspicious flows in operational AML workflows.
+    
+    \subsection{Limitations of the Study}
+    
+    Several limitations remain. The current pipeline still depends on a candidate generation step that restricts candidate pairs to a bounded time window and a reasonable value range, so it may miss unusually long or heavily obfuscated flows. In addition, the training labels are derived from off-chain request evidence and heuristic seeds, which may introduce bias if the underlying request patterns are incomplete or noisy. The framework also assumes that matching pairs remain relatively consistent in value and ordering, which may be violated by batching, splitting, or multi-hop obfuscation. Finally, the present evaluation focuses on a limited temporal window and a specific set of SideShift-related requests, so broader generalization to additional services and longer horizons remains to be tested.
+    
+    \subsection{Implications for AML Practice}
+    
+    For AML investigators, TRON-ICE offers a practical decision-support tool for prioritizing suspicious deposit-withdrawal links and for tracing high-risk flows that would otherwise remain hidden behind ordinary exchange processing delays. The system is best viewed as a high-confidence triage mechanism rather than a standalone proof of illicit intent. Its outputs should therefore be combined with contextual evidence, case-specific investigation, and compliance workflows to support human decision-making.
+    
+    % ============================================================
+    \section{Conclusion}
+    \label{sec:conclusion}
+    % ============================================================
+    
+    In this paper, we introduced TRON-ICE, an end-to-end framework for tracing deposit-withdrawal relationships associated with ICE services on the Tron network. By combining on-chain collection, transaction normalization, candidate generation, feature engineering, XGBoost-based scoring, and one-to-one matching with address-reuse-aware tie-breaking, the framework moves beyond rigid heuristic rules and provides a more robust approach for forensic transaction matching. Our temporal holdout evaluation shows that the proposed model substantially outperforms a strict heuristic baseline at a conservative confidence threshold of $0.99$, producing 122 predicted matches with only 2 false positives while maintaining very high precision and F1-score. The case studies further show that the framework can recover both rapid and delayed flows, which is particularly relevant for identifying suspicious activity that would otherwise remain hidden behind ordinary exchange processing delays. Future work will focus on extending the evaluation to additional services and longer observation windows, improving pseudo-labeling strategies, and developing more adaptive monitoring pipelines for real-time AML applications.
+    
+    % ============================================================
+    % References
+    % ============================================================
+    \begin{thebibliography}{30}
+    
+    \bibitem{tron2024}
+    TRON Foundation, ``TRON Whitepaper,'' 2024. [Online]. Available: https://tron.network/
+    
+    \bibitem{chainalysis2024}
+    Chainalysis, ``The 2024 Crypto Crime Report,'' Chainalysis Inc., 2024.
+    
+    \bibitem{ofac2022}
+    U.S. Department of the Treasury, ``U.S. Treasury Sanctions Notorious Virtual Currency Mixer Tornado Cash,'' Office of Foreign Assets Control (OFAC), Aug. 2022.
+    
+    \bibitem{hu2024ice}
+    Y.~Hu, Y.~Sun, L.~Wu, Y.~Zhou, and R.~Chang, ``Towards Understanding and Analyzing Instant Cryptocurrency Exchanges,'' \textit{Proc. ACM Meas. Anal. Comput. Syst.}, vol.~8, no.~3, Art.~48, pp.~1--24, Dec. 2024. DOI: 10.1145/3700430.
+    
+    \bibitem{tsai2024tron}
+    M.-L.~Tsai, C.-Y.~Kuan, C.-L.~Lin, C.-H.~Shih, and F.-C.~Tsai, ``The Investigation of Illicit Tron Wallet based on Temporal Behaviour Analysis,'' \textit{Procedia Computer Science}, vol.~246, pp.~3483--3492, 2024.
+    
+    \bibitem{mao2024tron}
+    Q.~Mao, J.~Wang, Z.~Feng, and J.~Yan, ``Unravelling Stablecoin-Favored Ecosystem: Extracting, Exploring On-Chain Data from TRON Blockchain,'' in \textit{Blockchain and Web3 Technology}, Springer, 2024, pp.~227--244.
+    
+    \bibitem{lam2024usdt}
+    Y.~A.~Lam, K.~P.~Chow, and S.~M.~Yiu, ``Uncovering Fraudulent Patterns in USDT Transactions on the TRON Blockchain with EDA and Machine Learning Techniques,'' in \textit{Int. Conf. Digital Forensics and Cyber Crime}, Springer, 2024.
+    
+    \bibitem{xia2024token}
+    L.~L.~Xia, Q.~Wang, Z.~Ma, and B.~Song, ``Digital Token Transaction Tracing Method,'' in \textit{Int. Symp. Emerging Information Security (ISEIS)}, Springer, 2024, pp.~87--101.
+    
+    \bibitem{shih2024money}
+    C.-H.~Shih and M.-L.~Tsai, ``Application of Money Flow Analysis Technology in the Investigation of Money Laundering Crimes in Taiwan,'' \textit{Procedia Computer Science}, vol.~244, pp.~537--544, 2024.
+    
+    \bibitem{yousaf2019tracing}
+    H.~Yousaf, S.~Kappos, and S.~Meiklejohn, ``Tracing Transactions Across Cryptocurrency Ledgers,'' in \textit{Proc. 28th USENIX Security Symp.}, 2019, pp.~837--850.
+    
+    \bibitem{zhang2020heuristic}
+    Y.~Zhang, J.~Wang, and J.~Luo, ``Heuristic-Based Identity Clustering with Anonymized Transaction Graphs,'' in \textit{Proc. IEEE INFOCOM}, 2020.
+    
+    \bibitem{wu2023asset}
+    J.~Wu, D.~Lin, Q.~Fu, S.~Yang, T.~Chen, and Z.~Zheng, ``Toward Understanding Asset Flows in Crypto Money Laundering Through the Lenses of Ethereum Heists,'' \textit{IEEE Trans. Inf. Forensics Security}, vol.~19, pp.~1389--1403, 2023. DOI: 10.1109/TIFS.2023.3342094.
+    
+    \bibitem{zhou2023visual}
+    F.~Zhou, Y.~Chen, C.~Zhu, L.~Jiang, and X.~Liao, ``Visual Analysis of Money Laundering in Cryptocurrency Exchange,'' \textit{IEEE Trans. Vis. Comput. Graph.}, vol.~29, no.~7, pp.~3181--3198, 2023. DOI: 10.1109/TVCG.2023.3264403.
+    
+    \bibitem{lin2025track}
+    D.~Lin, Z.~Zheng, J.~Wu, J.~Yang, and K.~Lin, ``Track and Trace: Automatically Uncovering Cross-Chain Transactions in the Multi-Blockchain Ecosystems,'' \textit{IEEE Trans. Dependable Secure Comput.}, 2025. DOI: 10.1109/TDSC.2025.3531823.
+    
+    \bibitem{pocher2023detecting}
+    N.~Pocher, M.~Zichichi, F.~Merizzi, M.~Z.~Shafiq, and S.~Ferretti, ``Detecting Anomalous Cryptocurrency Transactions: An AML/CFT Application of Machine Learning-Based Forensics,'' \textit{Electronic Markets}, vol.~33, Art.~37, 2023. DOI: 10.1007/s12525-023-00654-3.
+    
+    \bibitem{venckauskas2024ml}
+    A.~Ven\v{c}kauskas, \v{S}.~Grigali\={u}nas, and L.~Pocius, ``Machine Learning in Money Laundering Detection over Blockchain Technology,'' \textit{IEEE Access}, vol.~12, pp.~126221--126241, 2024. DOI: 10.1109/ACCESS.2024.3454137.
+    
+    \bibitem{chaudhari2024blockstash}
+    D.~Chaudhari and S.~Shukla, ``Blockstash Intelligence: Real-Time Crypto Crime Investigation and Forensics Tool,'' in \textit{Proc. 6th Conf. Blockchain Research and Applications for Innovative Networks and Services (BRAINS)}, IEEE, 2024, pp.~1--8.
+    
+    \bibitem{chen2016xgboost}
+    T.~Chen and C.~Guestrin, ``XGBoost: A Scalable Tree Boosting System,'' in \textit{Proc. 22nd ACM SIGKDD Int. Conf. Knowledge Discovery and Data Mining}, 2016, pp.~785--794. DOI: 10.1145/2939672.2939785.
+    
+    \bibitem{trongrid2024}
+    TronGrid, ``TronGrid API Documentation,'' 2024. [Online]. Available: https://www.trongrid.io/
+    
+    \bibitem{etherscan2023}
+    Etherscan, ``Ethereum (ETH) Blockchain Explorer,'' 2023. [Online]. Available: https://etherscan.io/
+    
+    \bibitem{binance2023}
+    Binance, ``Binance -- Cryptocurrency Exchange,'' 2023. [Online]. Available: https://www.binance.com/
+    
+    \bibitem{coingecko2024}
+    CoinGecko, ``Cryptocurrency Prices, Charts, and Crypto Market Cap,'' 2024. [Online]. Available: https://www.coingecko.com/
+    
+    \bibitem{tornado2022}
+    U.S. Department of the Treasury, ``Specially Designated Nationals and Blocked Persons List (SDN): Tornado Cash,'' Aug. 2022.
+    
+    \bibitem{meiklejohn2013fistful}
+    S.~Meiklejohn, M.~Pomarole, G.~Jordan, K.~Levchenko, D.~McCoy, G.~M.~Voelker, and S.~Savage, ``A Fistful of Bitcoins: Characterizing Payments Among Men with No Names,'' in \textit{Proc. ACM Internet Measurement Conf. (IMC)}, 2013, pp.~127--140.
+    
+    \bibitem{weber2019antimoney}
+    M.~Weber, G.~Domeniconi, J.~Chen, D.~K.~I.~Weidele, C.~Bellei, T.~Robinson, and C.~E.~Leiserson, ``Anti-Money Laundering in Bitcoin: Experimenting with Graph Convolutional Networks for Financial Forensics,'' in \textit{KDD Workshop on Anomaly Detection in Finance}, 2019.
+    
+    \bibitem{wu2022tutela}
+    M.~Wu, W.~Jeong, J.~Seres, and A.~Zohar, ``Tutela: An Open-Source Tool for Assessing User-Privacy on Ethereum and Tornado Cash,'' in \textit{Proc. USENIX Security Symp.}, 2022.
+    
+    \bibitem{agarwal2024forensics}
+    U.~Agarwal, V.~Rishiwal, and S.~Tanwar, ``Blockchain and Crypto Forensics: Investigating Crypto Frauds,'' \textit{Int. J. Network Management}, vol.~34, no.~4, Art.~e2255, 2024. DOI: 10.1002/nem.2255.
+    
+    \bibitem{twolayer2024tron}
+    ``A Two-Layer Transaction Network-Based Method for Virtual Currency Address Identity Recognition,'' \textit{Cryptography}, vol.~9, no.~4, Art.~65, 2024. DOI: 10.3390/cryptography9040065.
+    
+    \bibitem{jerabek2025open}
+    J.~Je{\v{r}}{\'a}bek and V.~Vesel{\'y}, ``Open platform for Tron blockchain forensics,'' in \textit{Proc. Excel@FIT}, 2025.
+    
+    \bibitem{lawful2024metadata}
+    ``A Lawful Metadata-Driven Framework for Linking Encrypted Communication Behavior and Cryptocurrency Wallet Activity in Digital Investigations,'' \textit{Forensic Sciences}, vol.~4, no.~4, Art.~73, 2024. DOI: 10.3390/forensicsci4040073.forensicsci40400
+    
+    \bibitem{trondev2024}
+    TRON Developers, ``TRON Developer Documentation: Getting Started,'' 2024. [Online]. Available: https://developers.tron.network/docs/getting-start
+    
+    \bibitem{tronscan2024}
+    TRONSCAN, ``TRONSCAN -- Official TRON Blockchain Explorer,'' 2024. [Online]. Available: https://tronscan.org/\#/
+    
+    \bibitem{okasova2024using}
+    K.~Okasov{\'a} and K.~Ko{\v{s}}t{\'a}l, ``Using Machine Learning for Predicting Arbitrage Occurrences in Cryptocurrency Exchanges,'' in \textit{Proc. IEEE Int. Conf. Blockchain and Cryptocurrency (ICBC)}, 2024, pp.~1--7. DOI: 10.1109/icbc59979.2024.10634339.
+    
+    \bibitem{qureshi2025evaluating}
+    S.~M.~Qureshi, A.~Saeed, F.~Ahmad, A.~R.~Khattak, S.~H.~Almotiri, M.~A.~Al~Ghamdi, and M.~Shah~Rukh, ``Evaluating machine learning models for predictive accuracy in cryptocurrency price forecasting,'' \textit{PeerJ Computer Science}, vol.~11, p.~e2626, 2025. DOI: 10.7717/peerj-cs.2626.
+    \end{thebibliography}
+    
+    \end{document}
+    

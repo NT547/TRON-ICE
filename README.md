@@ -1,75 +1,163 @@
-# Phân chia công việc
+# TRON-ICE
 
-Link viết bài báo: [overleaf](https://www.overleaf.com/2462761284ynddbdcwbfvz#eb6e42)
+TRON-ICE is a research-oriented framework for tracing deposit-withdrawal relationships associated with Instant Cryptocurrency Exchanges (ICEs) on the Tron blockchain. It is designed for blockchain forensics, AML-oriented analysis, and transaction matching experiments where the real counterparties are not directly visible on-chain.
 
-Bài mẫu: 
+The repository combines several components:
 
-https://drive.google.com/file/d/1E06OPKjQmP6IQnzlyK-3GC2G_RW_In7d/view?usp=sharing
+- on-chain data collection from Tron hot wallets,
+- transaction classification into deposits and withdrawals,
+- normalization and feature engineering,
+- weakly supervised label construction,
+- XGBoost-based scoring,
+- matching and evaluation pipelines.
 
-## 1. Đánh giá khả năng & Chiến lược điểm nhấn
+## 1. What this project does
 
-- **Mức độ khả thi:** Trung bình - Khó. Rào cản lớn nhất là thời gian cào dữ liệu và thiết kế thuật toán mới.
-- **Chiến lược chọn "Chain mới":** Chọn mạng **Tron (TRC-20)**.
-- **Lý do chọn Tron:** Cấu trúc tài khoản (Account-based) khá giống Ethereum nên dễ tái hiện thuật toán cũ, nhưng Tron lại là mạng được tội phạm sử dụng nhiều nhất để chuyển USDT qua các sàn ICE nhờ phí rẻ. Đây là một "Research Gap" cực kỳ thuyết phục cho bài báo mới.
-- **Chiến lược "Nâng cấp thuật toán":** Thay vì chỉ dùng luật IF-ELSE cứng nhắc cho thời gian và giá trị như bài gốc, hãy áp dụng một mô hình Học máy cơ bản (như Random Forest hoặc XGBoost) để phân loại các cặp giao dịch "Nạp - Rút". Hoặc đơn giản hơn là thêm một trọng số phạt theo thời gian (Time-decay weighting) để linh hoạt hóa biên độ $\bigtriangleup T$
+The goal of TRON-ICE is to link suspicious on-chain deposits and withdrawals that are routed through ICE services. Instead of relying only on rigid threshold rules such as a fixed time window or value tolerance, the system uses a structured pipeline that learns matching behavior from weak supervision and then produces candidate links for forensic review.
 
----
+In practice, the workflow is:
 
-## 2. Lộ trình thực hiện (Roadmap 19 ngày)
+1. identify service hot wallets,
+2. collect associated Tron transactions,
+3. classify them as deposits or withdrawals,
+4. build candidate transaction pairs,
+5. score each pair with features such as time difference, value deviation, token consistency, and address reuse,
+6. output matched pairs for analysis.
 
-| **Khung thời gian** | **Giai đoạn** | **Mục tiêu công việc (Deliverables)** |
-| --- | --- | --- |
-| **Ngày 1-3** | **Thu thập & Làm sạch dữ liệu** | - Xác định ví nóng (Hot Wallet) của 2 sàn ICE (VD: FixedFloat, ChangeNOW) trên mạng Tron.
-- Viết script dùng TronGrid API để cào dữ liệu trong 3-5 ngày gần nhất.
-- **Dev:** Trả ra file CSV chứa dữ liệu giao dịch đã quy đổi sang USD. |
-| **Ngày 4-6** | **Tái hiện Baseline (Bản gốc)** | - Code lại thuật toán khớp nối theo giá trị và thời gian của bài báo gốc (Section 5).
-- **Dev:** Chạy thử trên tập dữ liệu đã cào, ghi nhận độ chính xác cơ bản. |
-| **Ngày 7-9** | **Nâng cấp thuật toán** | - Áp dụng điểm mới (Học máy hoặc Trọng số linh hoạt).
-- Lấy dữ liệu Nạp/Rút làm tập huấn luyện (Training set).
-- **Dev:** Hoàn thiện code thuật toán phiên bản 2.0. |
-| **Ngày 10-12** | **Thực nghiệm trên Tron** | - Chạy thuật toán 2.0 trên toàn bộ tập dữ liệu mạng Tron.
-- **Research:** Bắt đầu viết Introduction, Related Work và Methodology cho bài báo mới. |
-| **Ngày 13-15** | **Đánh giá & Tìm Case Study** | - Tính toán các chỉ số False Positive, False Negative. So sánh Baseline vs 2.0.
-- Tìm trên Twitter (ZachXBT) 1 vụ lừa đảo dùng Tron và ICE để minh họa.
-- **Dev:** Vẽ biểu đồ so sánh, trực quan hóa dòng tiền (dùng Gephi). |
-| **Ngày 16-18** | **Viết & Ráp nối báo cáo** | - Đưa biểu đồ, dữ liệu vào bài. Viết phần Evaluation và Conclusion.
-- **Research + Dev:** Review chéo bài viết, format theo chuẩn IEEE/ACM. |
-| **Ngày 19** | **Buffer & Nộp bài** | - Chỉnh sửa lỗi chính tả, kiểm tra format slide thuyết trình.
-- Đóng gói source code lên GitHub. Nộp bài. |
+## 2. System overview
 
----
+The overall workflow consists of the following stages:
 
-## 3. Phương pháp & Tài nguyên
+- Data collection: gather raw Tron transactions and TRC-20 transfers related to selected ICE services.
+- Transaction normalization/classification: convert raw records into structured deposit and withdrawal operations.
+- Candidate generation: construct plausible deposit-withdrawal pairs under temporal and value constraints.
+- Feature engineering: build features used to distinguish true matches from background noise.
+- Label construction: create weak labels from strict seeds and high-confidence pseudo-labels.
+- Model scoring: train and apply an XGBoost classifier to estimate match probability.
+- Matching: select one-to-one links and save outputs for downstream analysis.
 
-- **Từ khóa tìm kiếm (Keywords):** `Tron blockchain tracking`, `TRC-20 money laundering via ICE`, `Heuristic transaction matching cryptocurrency`, `Machine learning cross-chain tracing`.
-- **Công cụ / Phần mềm:**
-    - **Ngôn ngữ:** Python (Bắt buộc để đi nhanh).
-    - **Thư viện:** `tronpy` hoặc `requests` (gọi API Tron), `pandas` (xử lý dataframe), `scikit-learn` (nếu dùng Học máy).
-    - **API & Dữ liệu:** TronGrid API (mạng Tron), Etherscan API (nếu cần so sánh), CoinGecko API (lấy tỷ giá USD).
-    - **Trực quan hóa:** Gephi (xuất file CSV từ Python ra Gephi để vẽ đồ thị mạng lưới dòng tiền).
+## 3. Repository structure
 
----
+- [main.py](main.py): main entry point for running the pipeline.
+- [src](src): implementation of collection, normalization, matching, and utilities.
+- [ground-truth](ground-truth): scripts for off-chain/on-chain labeling, training, prediction, and evaluation.
+- [data](data): raw, processed, classified, and matched transaction files.
+- [cache](cache): cached price data and intermediate artifacts.
+- [results](results): logs, model outputs, and experiment results.
+- [paper.tex](paper.tex): the LaTeX source for the research paper.
 
-## 4. Cấu trúc báo cáo chuẩn (Outline)
+## 4. Environment setup
 
-- **1. Abstract:** Tóm tắt vấn đề, phương pháp cải tiến và kết quả (viết cuối cùng).
-- **2. Introduction:** Bối cảnh ICE bị lạm dụng. Nhấn mạnh "Research Gap" (bài cũ chưa làm trên Tron và thuật toán còn cứng nhắc).
-- **3. Background & Related Work:** Cơ chế hoạt động của mạng Tron và ICE. Tóm tắt nhanh bài báo gốc.
-- **4. Methodology (Trọng tâm):**
-    - 4.1. Data Collection trên mạng Tron.
-    - 4.2. Thuật toán gốc (Baseline Method).
-    - 4.3. Thuật toán nâng cấp (Proposed Upgraded Algorithm).
-- **5. Evaluation:** Bảng so sánh hiệu suất giữa thuật toán cũ và mới. Đồ thị phân phối thời gian xử lý của mạng Tron so với Ethereum.
-- **6. Case Study:** Minh họa 1 dòng tiền bẩn thực tế đi qua ICE trên mạng Tron.
-- **7. Conclusion & Limitations:** Kết luận và nêu rõ giới hạn của nghiên cứu (do thời gian ngắn, lượng dữ liệu chưa bao phủ hết các năm).
+This project is implemented in Python. The required dependencies are listed in [requirements.txt](requirements.txt).
 
----
+Install them with:
 
-## 5. Cảnh báo rủi ro & Cách phòng tránh
+```bash
+pip install -r requirements.txt
+```
 
-1. **Chìm đắm vào việc cào dữ liệu (Data Trap):** Quá trình cào API luôn xảy ra lỗi timeout hoặc bị chặn vì vượt quá giới hạn (Rate limit).
-    - *Phòng tránh:* Đừng tham lam cào dữ liệu cả tháng. Hãy chọn ra đúng 1 tuần có biến động lớn (VD: tuần xảy ra vụ hack nào đó) hoặc cào khoảng 5000 giao dịch là đủ để làm PoC. Lưu ngay ra ổ cứng cục bộ.
-2. **Khớp nối sai vì phí mạng lưới (Network Fee):** Trên Ethereum phí tính bằng Gas, trên Tron tính bằng Energy/Bandwidth. Nếu dùng công thức bằng nhau tuyệt đối ($V_{in}$= $V _{out}$) sẽ không tìm ra giao dịch nào.
-    - *Phòng tránh:* Bắt buộc thiết lập ngưỡng sai số $\Delta V$ khoảng 1% đến 5% tùy thuộc vào biến động giá.
-3. **Hội chứng "Bỏ quên báo cáo":** Sinh viên IT hay cắm đầu vào code đến ngày 17 mới bắt đầu viết chữ đầu tiên.
-    - *Phòng tránh:* Viết cuốn chiếu. Ngày nào xong thuật toán, viết luôn phần Methodology của ngày đó.
+It is recommended to use a Python 3.10+ environment.
+
+## 5. Data requirements
+
+The pipeline expects transaction data for selected services such as:
+
+- ChangeNOW
+- FixedFloat
+- SideShift
+
+The project uses:
+
+- TronGrid-style transaction data,
+- TRC-20 transfers,
+- hot-wallet activity for the target ICE service,
+- price data for value normalization.
+
+If the dataset is not already present, the first step is to collect it from Tron-related sources.
+
+## 6. Running the pipeline
+
+### 6.1 Collect raw transaction data
+
+```bash
+python main.py --service sideshift --year 2025 --mode data_collection
+```
+
+This stage collects transactions related to the configured hot wallets for the chosen service and year.
+
+### 6.2 Classify transactions into deposits and withdrawals
+
+```bash
+python main.py --service sideshift --year 2025 --mode transaction_classifier
+```
+
+This step produces classified deposit and withdrawal files under the data/classified folder.
+
+### 6.3 Build ground-truth labels and training data
+
+```bash
+python main.py --service sideshift --year 2025 --mode ground_truth
+```
+
+This stage builds weakly supervised labels by combining strict seeds with pseudo-labels and prepares data for later model training.
+
+### 6.4 Run the full matching workflow
+
+The repository also contains dedicated scripts under [ground-truth](ground-truth) for more advanced ground-truth and model-training steps.
+
+Example:
+
+```bash
+python ground-truth/run_ground_truth.py --service sideshift --year 2025 --export-training
+```
+
+and for training the model:
+
+```bash
+python ground-truth/train_xgboost.py --service sideshift --year 2025
+```
+
+## 7. Output files
+
+The pipeline generates several output categories:
+
+- raw data in [data/raw](data/raw)
+- processed transaction files in [data/processed](data/processed)
+- classified deposits/withdrawals in [data/classified](data/classified)
+- matched pairs in [data/matched](data/matched)
+- logs and evaluation artifacts in [results](results)
+- trained model artifacts in [ground-truth/models](ground-truth/models)
+
+Depending on the run mode, outputs may include:
+
+- CSV files of classified deposits and withdrawals,
+- matched-pair results,
+- training pairs for model fitting,
+- evaluation logs and summaries.
+
+## 8. Main design ideas
+
+The system is built around the idea that ICE matching is not just a simple one-rule problem. The matching process uses a combination of:
+
+- temporal proximity,
+- value similarity,
+- token consistency,
+- address reuse signals,
+- learned decision boundaries from weak supervision.
+
+This makes the approach more suitable for real-world transaction tracing than fixed heuristics alone.
+
+## 9. Notes and limitations
+
+This repository is intended for research and forensic analysis. It is not a production-grade AML monitoring platform, and it should be used as a reproducible experimental framework rather than a fully automated investigative system.
+
+Some limitations are inherent to the setting:
+
+- on-chain evidence may be incomplete,
+- labeling depends on weak or heuristic supervision,
+- hot-wallet behavior can vary across services and periods,
+- the system may miss highly obfuscated or long-delay flows.
+
+## 10. Citation and usage context
+
+The project is tied to the associated research paper in [paper.tex](paper.tex). It is intended to support experiments on Tron-based ICE transaction matching and to provide reproducible artifacts for academic review.
