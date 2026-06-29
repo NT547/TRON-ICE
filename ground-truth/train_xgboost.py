@@ -15,6 +15,7 @@ from pathlib import Path
 
 import joblib
 import numpy as np
+from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
 from sklearn.model_selection import train_test_split
 
 GT_ROOT = Path(__file__).resolve().parent
@@ -22,7 +23,7 @@ REPO_ROOT = GT_ROOT.parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from src.xgboost.feature_engineering import FEATURE_NAMES, extract_features  # noqa: E402
+from src.tron_ice.features.xgboost_features import FEATURE_NAMES, extract_features  # noqa: E402
 
 try:
     import xgboost as xgb
@@ -52,7 +53,7 @@ def ensure_usd_value(tx: dict, year: int, cache_dir: str) -> None:
     if tx.get("usd_value") not in (None, 0.0):
         return
     try:
-        from src.baseline_algorithm.price_calculator import calculate_usd_value
+        from src.tron_ice.normalization.pricing import calculate_usd_value
 
         tx["usd_value"] = calculate_usd_value(tx, year, cache_dir=cache_dir, api_key=None)
     except Exception:
@@ -139,8 +140,21 @@ def main() -> None:
         eval_metric="logloss",
     )
     model.fit(X_train, y_train)
-    acc = (model.predict(X_test) == y_test).mean() if len(y_test) else 0.0
-    logger.info("Holdout accuracy: %.4f", acc)
+    if len(y_test):
+        y_pred = model.predict(X_test)
+        acc = accuracy_score(y_test, y_pred)
+        precision = precision_score(y_test, y_pred, zero_division=0)
+        recall = recall_score(y_test, y_pred, zero_division=0)
+        f1 = f1_score(y_test, y_pred, zero_division=0)
+    else:
+        acc = precision = recall = f1 = 0.0
+    logger.info(
+        "Holdout metrics: accuracy=%.4f precision=%.4f recall=%.4f f1=%.4f",
+        acc,
+        precision,
+        recall,
+        f1,
+    )
 
     model_path.parent.mkdir(parents=True, exist_ok=True)
     joblib.dump(

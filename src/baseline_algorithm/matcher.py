@@ -254,7 +254,51 @@ def run_matching(
     logging.info(
         f"Starting matching: {len(deposits)} deposits, {len(withdrawals)} withdrawals, using {num_processes} processes."
     )
-    # ...existing code...
+    all_transactions = deposits + withdrawals
+    prefetch_price_histories(all_transactions, year, cache_dir, api_key)
+    compute_usd_values(deposits, year, cache_dir, api_key, bucket_minutes)
+    compute_usd_values(withdrawals, year, cache_dir, api_key, bucket_minutes)
+
+    deposits = [
+        d for d in deposits
+        if d.get("token") and d.get("timestamp") is not None and d.get("usd_value") not in (None, 0.0)
+    ]
+    withdrawals = [
+        w for w in withdrawals
+        if w.get("token") and w.get("timestamp") is not None and w.get("usd_value") not in (None, 0.0)
+    ]
+    withdrawals_by_token, withdrawal_timestamps = build_withdrawal_index(withdrawals)
+
+    if not deposits or not withdrawals:
+        return []
+
+    if num_processes <= 1:
+        return process_batch(
+            deposits,
+            withdrawals_by_token,
+            withdrawal_timestamps,
+            time_window,
+            value_threshold,
+        )
+
+    batch_size = max(1, len(deposits) // num_processes)
+    batches = [deposits[i : i + batch_size] for i in range(0, len(deposits), batch_size)]
+    matches: List[Dict[str, Any]] = []
+    with ThreadPoolExecutor(max_workers=num_processes) as executor:
+        futures = [
+            executor.submit(
+                process_batch,
+                batch,
+                withdrawals_by_token,
+                withdrawal_timestamps,
+                time_window,
+                value_threshold,
+            )
+            for batch in batches
+        ]
+        for future in futures:
+            matches.extend(future.result())
+    return matches
 
 
 def save_matched_pairs(matches: List[Dict[str, Any]], output_file: str):
