@@ -1,0 +1,832 @@
+{
+  "service": "sideshift",
+  "date_window": {
+    "start": "2026-05-22",
+    "end": "2026-06-28"
+  },
+  "split_date": "2026-06-20",
+  "train_days": [
+    "2026-05-22",
+    "2026-05-27",
+    "2026-05-28",
+    "2026-05-29",
+    "2026-05-31",
+    "2026-06-01",
+    "2026-06-11",
+    "2026-06-12",
+    "2026-06-13",
+    "2026-06-14",
+    "2026-06-15",
+    "2026-06-16",
+    "2026-06-17",
+    "2026-06-18",
+    "2026-06-19"
+  ],
+  "test_days": [
+    "2026-06-21",
+    "2026-06-22",
+    "2026-06-23",
+    "2026-06-24",
+    "2026-06-25",
+    "2026-06-26",
+    "2026-06-27",
+    "2026-06-28"
+  ],
+  "counts": {
+    "offchain_history_all_observable": 13308,
+    "offchain_history": 1561,
+    "train_history": 805,
+    "test_history": 756,
+    "onchain_deposits": 12852,
+    "onchain_withdrawals": 16233,
+    "candidates_all_observable": 44465,
+    "candidates": 22195,
+    "train_candidates": 11031,
+    "test_candidates": 2369,
+    "strict_train_positives": 215,
+    "train_negatives": 4300,
+    "pseudo_labels_added": 6479,
+    "final_labeled_rows": 10994,
+    "strict_test_positives": 139,
+    "baseline_miss_discoveries": 19
+  },
+  "rules": {
+    "history_network_filter": "tron-any",
+    "candidate_pair_filter": "tron-any",
+    "collection_priority": [
+      "ethereum",
+      "solana",
+      "liquid",
+      "bitcoin",
+      "bsc",
+      "polygon",
+      "tron"
+    ],
+    "observable_chains": [
+      "bsc",
+      "ethereum",
+      "polygon",
+      "tron"
+    ],
+    "seed_positive_window_sec": 120,
+    "seed_settlement_window_sec": 7200,
+    "seed_max_rv": 0.005,
+    "seed_max_candidates_per_side": 1,
+    "positive_threshold": 0.99,
+    "negative_threshold": 0.01,
+    "train_negative_ratio": 20,
+    "eval_negative_ratio": 1000
+  },
+  "coverage": {
+    "observable_chains": [
+      "bsc",
+      "ethereum",
+      "polygon",
+      "tron"
+    ],
+    "fully_observable_records": 701,
+    "one_sided_observable_records": 860,
+    "unsupported_records": 0,
+    "tron_related_records": {
+      "tron_any_side": 1561,
+      "tron_deposit_side": 681,
+      "tron_settlement_side": 912,
+      "tron_both_sides": 32,
+      "non_tron_records": 0
+    },
+    "deposit_networks": [
+      {
+        "name": "tron",
+        "count": 681
+      },
+      {
+        "name": "ethereum",
+        "count": 234
+      },
+      {
+        "name": "liquid",
+        "count": 179
+      },
+      {
+        "name": "bitcoin",
+        "count": 151
+      },
+      {
+        "name": "solana",
+        "count": 112
+      },
+      {
+        "name": "polygon",
+        "count": 60
+      },
+      {
+        "name": "bsc",
+        "count": 59
+      },
+      {
+        "name": "litecoin",
+        "count": 25
+      },
+      {
+        "name": "base",
+        "count": 23
+      },
+      {
+        "name": "ton",
+        "count": 11
+      },
+      {
+        "name": "arbitrum",
+        "count": 4
+      },
+      {
+        "name": "bitcoincash",
+        "count": 3
+      },
+      {
+        "name": "polkadot",
+        "count": 3
+      },
+      {
+        "name": "bittensor",
+        "count": 2
+      },
+      {
+        "name": "ripple",
+        "count": 2
+      }
+    ],
+    "settle_networks": [
+      {
+        "name": "tron",
+        "count": 912
+      },
+      {
+        "name": "ethereum",
+        "count": 186
+      },
+      {
+        "name": "solana",
+        "count": 94
+      },
+      {
+        "name": "bitcoin",
+        "count": 89
+      },
+      {
+        "name": "polygon",
+        "count": 68
+      },
+      {
+        "name": "bsc",
+        "count": 62
+      },
+      {
+        "name": "liquid",
+        "count": 60
+      },
+      {
+        "name": "litecoin",
+        "count": 30
+      },
+      {
+        "name": "bitcoincash",
+        "count": 20
+      },
+      {
+        "name": "ton",
+        "count": 14
+      },
+      {
+        "name": "arbitrum",
+        "count": 7
+      },
+      {
+        "name": "ripple",
+        "count": 6
+      },
+      {
+        "name": "doge",
+        "count": 6
+      },
+      {
+        "name": "base",
+        "count": 4
+      },
+      {
+        "name": "aptos",
+        "count": 1
+      }
+    ],
+    "top_pairs": [
+      {
+        "name": "ethereum->tron",
+        "count": 234
+      },
+      {
+        "name": "tron->ethereum",
+        "count": 186
+      },
+      {
+        "name": "liquid->tron",
+        "count": 179
+      },
+      {
+        "name": "bitcoin->tron",
+        "count": 151
+      },
+      {
+        "name": "solana->tron",
+        "count": 112
+      },
+      {
+        "name": "tron->solana",
+        "count": 94
+      },
+      {
+        "name": "tron->bitcoin",
+        "count": 89
+      },
+      {
+        "name": "tron->polygon",
+        "count": 68
+      },
+      {
+        "name": "tron->bsc",
+        "count": 62
+      },
+      {
+        "name": "tron->liquid",
+        "count": 60
+      },
+      {
+        "name": "polygon->tron",
+        "count": 60
+      },
+      {
+        "name": "bsc->tron",
+        "count": 59
+      },
+      {
+        "name": "tron->tron",
+        "count": 32
+      },
+      {
+        "name": "tron->litecoin",
+        "count": 30
+      },
+      {
+        "name": "litecoin->tron",
+        "count": 25
+      }
+    ]
+  },
+  "coverage_by_split": {
+    "train_history": {
+      "observable_chains": [
+        "bsc",
+        "ethereum",
+        "polygon",
+        "tron"
+      ],
+      "fully_observable_records": 427,
+      "one_sided_observable_records": 378,
+      "unsupported_records": 0,
+      "tron_related_records": {
+        "tron_any_side": 805,
+        "tron_deposit_side": 368,
+        "tron_settlement_side": 458,
+        "tron_both_sides": 21,
+        "non_tron_records": 0
+      },
+      "deposit_networks": [
+        {
+          "name": "tron",
+          "count": 368
+        },
+        {
+          "name": "ethereum",
+          "count": 154
+        },
+        {
+          "name": "liquid",
+          "count": 74
+        },
+        {
+          "name": "bitcoin",
+          "count": 61
+        },
+        {
+          "name": "solana",
+          "count": 54
+        },
+        {
+          "name": "bsc",
+          "count": 31
+        },
+        {
+          "name": "polygon",
+          "count": 26
+        },
+        {
+          "name": "litecoin",
+          "count": 9
+        },
+        {
+          "name": "base",
+          "count": 7
+        },
+        {
+          "name": "ton",
+          "count": 6
+        },
+        {
+          "name": "arbitrum",
+          "count": 3
+        },
+        {
+          "name": "bitcoincash",
+          "count": 2
+        },
+        {
+          "name": "ripple",
+          "count": 2
+        },
+        {
+          "name": "optimism",
+          "count": 2
+        },
+        {
+          "name": "bittensor",
+          "count": 1
+        }
+      ],
+      "settle_networks": [
+        {
+          "name": "tron",
+          "count": 458
+        },
+        {
+          "name": "ethereum",
+          "count": 129
+        },
+        {
+          "name": "solana",
+          "count": 42
+        },
+        {
+          "name": "bitcoin",
+          "count": 39
+        },
+        {
+          "name": "polygon",
+          "count": 36
+        },
+        {
+          "name": "liquid",
+          "count": 34
+        },
+        {
+          "name": "bsc",
+          "count": 30
+        },
+        {
+          "name": "litecoin",
+          "count": 14
+        },
+        {
+          "name": "ton",
+          "count": 10
+        },
+        {
+          "name": "arbitrum",
+          "count": 4
+        },
+        {
+          "name": "bitcoincash",
+          "count": 4
+        },
+        {
+          "name": "doge",
+          "count": 3
+        },
+        {
+          "name": "aptos",
+          "count": 1
+        },
+        {
+          "name": "ripple",
+          "count": 1
+        }
+      ],
+      "top_pairs": [
+        {
+          "name": "ethereum->tron",
+          "count": 154
+        },
+        {
+          "name": "tron->ethereum",
+          "count": 129
+        },
+        {
+          "name": "liquid->tron",
+          "count": 74
+        },
+        {
+          "name": "bitcoin->tron",
+          "count": 61
+        },
+        {
+          "name": "solana->tron",
+          "count": 54
+        },
+        {
+          "name": "tron->solana",
+          "count": 42
+        },
+        {
+          "name": "tron->bitcoin",
+          "count": 39
+        },
+        {
+          "name": "tron->polygon",
+          "count": 36
+        },
+        {
+          "name": "tron->liquid",
+          "count": 34
+        },
+        {
+          "name": "bsc->tron",
+          "count": 31
+        },
+        {
+          "name": "tron->bsc",
+          "count": 30
+        },
+        {
+          "name": "polygon->tron",
+          "count": 26
+        },
+        {
+          "name": "tron->tron",
+          "count": 21
+        },
+        {
+          "name": "tron->litecoin",
+          "count": 14
+        },
+        {
+          "name": "tron->ton",
+          "count": 10
+        }
+      ]
+    },
+    "test_history": {
+      "observable_chains": [
+        "bsc",
+        "ethereum",
+        "polygon",
+        "tron"
+      ],
+      "fully_observable_records": 274,
+      "one_sided_observable_records": 482,
+      "unsupported_records": 0,
+      "tron_related_records": {
+        "tron_any_side": 756,
+        "tron_deposit_side": 313,
+        "tron_settlement_side": 454,
+        "tron_both_sides": 11,
+        "non_tron_records": 0
+      },
+      "deposit_networks": [
+        {
+          "name": "tron",
+          "count": 313
+        },
+        {
+          "name": "liquid",
+          "count": 105
+        },
+        {
+          "name": "bitcoin",
+          "count": 90
+        },
+        {
+          "name": "ethereum",
+          "count": 80
+        },
+        {
+          "name": "solana",
+          "count": 58
+        },
+        {
+          "name": "polygon",
+          "count": 34
+        },
+        {
+          "name": "bsc",
+          "count": 28
+        },
+        {
+          "name": "litecoin",
+          "count": 16
+        },
+        {
+          "name": "base",
+          "count": 16
+        },
+        {
+          "name": "ton",
+          "count": 5
+        },
+        {
+          "name": "polkadot",
+          "count": 3
+        },
+        {
+          "name": "stacks",
+          "count": 1
+        },
+        {
+          "name": "doge",
+          "count": 1
+        },
+        {
+          "name": "cardano",
+          "count": 1
+        },
+        {
+          "name": "bitcoincash",
+          "count": 1
+        }
+      ],
+      "settle_networks": [
+        {
+          "name": "tron",
+          "count": 454
+        },
+        {
+          "name": "ethereum",
+          "count": 57
+        },
+        {
+          "name": "solana",
+          "count": 52
+        },
+        {
+          "name": "bitcoin",
+          "count": 50
+        },
+        {
+          "name": "polygon",
+          "count": 32
+        },
+        {
+          "name": "bsc",
+          "count": 32
+        },
+        {
+          "name": "liquid",
+          "count": 26
+        },
+        {
+          "name": "litecoin",
+          "count": 16
+        },
+        {
+          "name": "bitcoincash",
+          "count": 16
+        },
+        {
+          "name": "ripple",
+          "count": 5
+        },
+        {
+          "name": "ton",
+          "count": 4
+        },
+        {
+          "name": "base",
+          "count": 4
+        },
+        {
+          "name": "arbitrum",
+          "count": 3
+        },
+        {
+          "name": "doge",
+          "count": 3
+        },
+        {
+          "name": "cardano",
+          "count": 1
+        }
+      ],
+      "top_pairs": [
+        {
+          "name": "liquid->tron",
+          "count": 105
+        },
+        {
+          "name": "bitcoin->tron",
+          "count": 90
+        },
+        {
+          "name": "ethereum->tron",
+          "count": 80
+        },
+        {
+          "name": "solana->tron",
+          "count": 58
+        },
+        {
+          "name": "tron->ethereum",
+          "count": 57
+        },
+        {
+          "name": "tron->solana",
+          "count": 52
+        },
+        {
+          "name": "tron->bitcoin",
+          "count": 50
+        },
+        {
+          "name": "polygon->tron",
+          "count": 34
+        },
+        {
+          "name": "tron->polygon",
+          "count": 32
+        },
+        {
+          "name": "tron->bsc",
+          "count": 32
+        },
+        {
+          "name": "bsc->tron",
+          "count": 28
+        },
+        {
+          "name": "tron->liquid",
+          "count": 26
+        },
+        {
+          "name": "litecoin->tron",
+          "count": 16
+        },
+        {
+          "name": "tron->litecoin",
+          "count": 16
+        },
+        {
+          "name": "tron->bitcoincash",
+          "count": 16
+        }
+      ]
+    }
+  },
+  "pair_coverage": {
+    "candidates": {
+      "rows": 22195,
+      "tron_any_side": 22195,
+      "tron_deposit_side": 12113,
+      "tron_withdrawal_side": 14257,
+      "tron_both_sides": 4175,
+      "non_tron_pairs": 0,
+      "positive_rows": 0,
+      "negative_rows": 0,
+      "positive_tron_any_side": 0,
+      "negative_tron_any_side": 0
+    },
+    "train_candidates": {
+      "rows": 11031,
+      "tron_any_side": 11031,
+      "tron_deposit_side": 6333,
+      "tron_withdrawal_side": 7192,
+      "tron_both_sides": 2494,
+      "non_tron_pairs": 0,
+      "positive_rows": 0,
+      "negative_rows": 0,
+      "positive_tron_any_side": 0,
+      "negative_tron_any_side": 0
+    },
+    "test_candidates": {
+      "rows": 2369,
+      "tron_any_side": 2369,
+      "tron_deposit_side": 1214,
+      "tron_withdrawal_side": 1554,
+      "tron_both_sides": 399,
+      "non_tron_pairs": 0,
+      "positive_rows": 0,
+      "negative_rows": 0,
+      "positive_tron_any_side": 0,
+      "negative_tron_any_side": 0
+    },
+    "final_labeled_train_rows": {
+      "rows": 10994,
+      "tron_any_side": 10994,
+      "tron_deposit_side": 6302,
+      "tron_withdrawal_side": 7170,
+      "tron_both_sides": 2478,
+      "non_tron_pairs": 0,
+      "positive_rows": 254,
+      "negative_rows": 10740,
+      "positive_tron_any_side": 254,
+      "negative_tron_any_side": 10740
+    },
+    "holdout_rows": {
+      "rows": 2476,
+      "tron_any_side": 2476,
+      "tron_deposit_side": 1256,
+      "tron_withdrawal_side": 1630,
+      "tron_both_sides": 410,
+      "non_tron_pairs": 0,
+      "positive_rows": 139,
+      "negative_rows": 2337,
+      "positive_tron_any_side": 139,
+      "negative_tron_any_side": 2337
+    },
+    "baseline_miss_discoveries": {
+      "rows": 19,
+      "tron_any_side": 19,
+      "tron_deposit_side": 13,
+      "tron_withdrawal_side": 6,
+      "tron_both_sides": 0,
+      "non_tron_pairs": 0,
+      "positive_rows": 0,
+      "negative_rows": 0,
+      "positive_tron_any_side": 0,
+      "negative_tron_any_side": 0
+    }
+  },
+  "holdout": {
+    "positives": 139,
+    "negatives": 2337,
+    "negative_ratio": 1000,
+    "pair_coverage": {
+      "rows": 2476,
+      "tron_any_side": 2476,
+      "tron_deposit_side": 1256,
+      "tron_withdrawal_side": 1630,
+      "tron_both_sides": 410,
+      "non_tron_pairs": 0,
+      "positive_rows": 139,
+      "negative_rows": 2337,
+      "positive_tron_any_side": 139,
+      "negative_tron_any_side": 2337
+    },
+    "xgboost": {
+      "pr_auc": 0.9930792236526563,
+      "threshold_0_50": {
+        "accuracy": 0.9947495961227787,
+        "precision": 0.95,
+        "recall": 0.9568345323741008,
+        "f1": 0.953405017921147,
+        "tp": 133,
+        "fp": 7,
+        "tn": 2330,
+        "fn": 6,
+        "predicted_positive": 140,
+        "predicted_negative": 2336
+      },
+      "threshold_0_99": {
+        "accuracy": 0.9915185783521809,
+        "precision": 0.9836065573770492,
+        "recall": 0.8633093525179856,
+        "f1": 0.9195402298850575,
+        "tp": 120,
+        "fp": 2,
+        "tn": 2335,
+        "fn": 19,
+        "predicted_positive": 122,
+        "predicted_negative": 2354
+      }
+    },
+    "baseline_rule": {
+      "pr_auc": 0.0561389337641357,
+      "threshold_0_50": {
+        "accuracy": 0.9438610662358643,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "tp": 0,
+        "fp": 0,
+        "tn": 2337,
+        "fn": 139,
+        "predicted_positive": 0,
+        "predicted_negative": 2476
+      },
+      "max_time_diff_sec": 120,
+      "max_value_rv": 0.005
+    }
+  },
+  "outputs": {
+    "model": "D:\\Blockchain\\DO_AN\\TRON-ICE\\ground-truth\\models\\xgboost_sideshift_2026_temporal_semisupervised.pkl",
+    "labels": "D:\\Blockchain\\DO_AN\\TRON-ICE\\ground-truth\\output\\training_pairs_sideshift_2026_temporal_semisupervised.jsonl",
+    "holdout": "D:\\Blockchain\\DO_AN\\TRON-ICE\\ground-truth\\output\\holdout_pairs_sideshift_2026_temporal_semisupervised.jsonl",
+    "baseline_misses": "D:\\Blockchain\\DO_AN\\TRON-ICE\\ground-truth\\result\\sideshift_2026_temporal_semisupervised_baseline_misses.json"
+  },
+  "caveat": "This is a TRON-anchored study: only SideShift records and D-W candidate pairs with a TRON deposit side, a TRON withdrawal/settlement side, or both are included in training and holdout metrics. Full D-W seed labels require both sides to be observable in the configured on-chain data. Bitcoin/Liquid-related requests are structurally different and should be treated as one-sided evidence unless comparable classified data exists for that side. Strict labels are high-precision seeds and temporal holdout anchors, not manual ground truth. baseline_misses should be manually reviewed before being reported as true positives."
+}

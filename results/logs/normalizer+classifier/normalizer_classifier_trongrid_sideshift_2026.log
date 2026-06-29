@@ -1,0 +1,9 @@
+Starting transaction normalizer pipeline...
+Normalized 10247 transactions
+Filtered by whitelist ['USDT', 'USDC', 'TRX'], remaining: 10247 (removed 0)
+Saved normalized transactions to data/normalize\normalized_trongrid_sideshift_2026.json
+Filtered transactions down to 10246 records after noise removal
+Classified into 4445 deposits, 5800 withdrawals, 0 unclassified_trx
+Saved classified deposits to data/classified\deposits_trongrid_sideshift_2026.json
+Saved classified withdrawals to data/classified\withdrawals_trongrid_sideshift_2026.json
+Pipeline completed.

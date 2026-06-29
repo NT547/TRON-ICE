@@ -1,0 +1,572 @@
+[
+  {
+    "deposit": {
+      "timestamp": 1782085499000,
+      "token": "USDT",
+      "amount": 54.317768,
+      "usd_value": 54.317768,
+      "from": "0xfb55661d90c1ae7e0859a100d9e1fa136b4bf857",
+      "to": "0xcdd37ada79f589c15bd4f8fd2083dc88e34a2af2",
+      "tx_hash": "0x925f0c45228ac332151cf7d283baaac9ebf4057ba2a55c92d17e17be97cd2be3",
+      "txid": "0x925f0c45228ac332151cf7d283baaac9ebf4057ba2a55c92d17e17be97cd2be3",
+      "network": "ethereum",
+      "chain": "ethereum"
+    },
+    "withdrawal": {
+      "timestamp": 1782085542000,
+      "token": "USDT",
+      "amount": 51.0,
+      "usd_value": 51.0,
+      "from": "TBEkD71bkL7fNz2HuCeisRbtvwwT2JWaMr",
+      "to": "TLtHFFseftyyFPD8zr2dhTUfQaouha2Qn4",
+      "tx_hash": "TBEkD71bkL7fNz2HuCeisRbtvwwT2JWaMr_1782085542000_TLtHFFseftyyFPD8zr2dhTUfQaouha2Qn4",
+      "txid": "TBEkD71bkL7fNz2HuCeisRbtvwwT2JWaMr_1782085542000_TLtHFFseftyyFPD8zr2dhTUfQaouha2Qn4",
+      "network": "tron",
+      "chain": "tron"
+    },
+    "model_probability": 0.9961795806884766,
+    "delta_t_sec": 43.0,
+    "value_rv": 0.06108071303666235,
+    "missed_by_baseline_rule": true
+  },
+  {
+    "deposit": {
+      "timestamp": 1782286223000,
+      "token": "USDC",
+      "amount": 63.951363,
+      "usd_value": 63.951363,
+      "from": "0x6a000f20005980200259b80c5102003040001068",
+      "to": "0xcdd37ada79f589c15bd4f8fd2083dc88e34a2af2",
+      "tx_hash": "0xa51c58a233e7bb0f8a5f2044f05eec335beca065a985d0510a2794073f746b18",
+      "txid": "0xa51c58a233e7bb0f8a5f2044f05eec335beca065a985d0510a2794073f746b18",
+      "network": "ethereum",
+      "chain": "ethereum"
+    },
+    "withdrawal": {
+      "timestamp": 1782286236000,
+      "token": "USDT",
+      "amount": 60.616502,
+      "usd_value": 60.616502,
+      "from": "TBEkD71bkL7fNz2HuCeisRbtvwwT2JWaMr",
+      "to": "TXSsKSHG87nmRUb78iGzqwb1i9KsCmLTS4",
+      "tx_hash": "TBEkD71bkL7fNz2HuCeisRbtvwwT2JWaMr_1782286236000_TXSsKSHG87nmRUb78iGzqwb1i9KsCmLTS4",
+      "txid": "TBEkD71bkL7fNz2HuCeisRbtvwwT2JWaMr_1782286236000_TXSsKSHG87nmRUb78iGzqwb1i9KsCmLTS4",
+      "network": "tron",
+      "chain": "tron"
+    },
+    "model_probability": 0.9984233379364014,
+    "delta_t_sec": 13.0,
+    "value_rv": 0.052146832273144886,
+    "missed_by_baseline_rule": true
+  },
+  {
+    "deposit": {
+      "timestamp": 1782317027000,
+      "token": "USDC",
+      "amount": 5047.072434,
+      "usd_value": 5047.072434,
+      "from": "0x91bcddc1b7609d4c1431c1b703e6bb6e901af477",
+      "to": "0xcdd37ada79f589c15bd4f8fd2083dc88e34a2af2",
+      "tx_hash": "0xc812c8c387ee3424c13e636307fbc9dc74ef6f2417ee87d474d30b5af6577ddb",
+      "txid": "0xc812c8c387ee3424c13e636307fbc9dc74ef6f2417ee87d474d30b5af6577ddb",
+      "network": "ethereum",
+      "chain": "ethereum"
+    },
+    "withdrawal": {
+      "timestamp": 1782317085000,
+      "token": "USDT",
+      "amount": 4951.449316,
+      "usd_value": 4951.449316,
+      "from": "TBEkD71bkL7fNz2HuCeisRbtvwwT2JWaMr",
+      "to": "TLgYPLMBM6wkePd7gtREvr4rTARN6d3yzb",
+      "tx_hash": "TBEkD71bkL7fNz2HuCeisRbtvwwT2JWaMr_1782317085000_TLgYPLMBM6wkePd7gtREvr4rTARN6d3yzb",
+      "txid": "TBEkD71bkL7fNz2HuCeisRbtvwwT2JWaMr_1782317085000_TLgYPLMBM6wkePd7gtREvr4rTARN6d3yzb",
+      "network": "tron",
+      "chain": "tron"
+    },
+    "model_probability": 0.9903706908226013,
+    "delta_t_sec": 58.0,
+    "value_rv": 0.01894625433861953,
+    "missed_by_baseline_rule": true
+  },
+  {
+    "deposit": {
+      "timestamp": 1782377951000,
+      "token": "USDC",
+      "amount": 5000.0,
+      "usd_value": 5000.0,
+      "from": "0xe9b198074b3d57f4395452a693f6006b24bf1e9e",
+      "to": "0xcdd37ada79f589c15bd4f8fd2083dc88e34a2af2",
+      "tx_hash": "0x0a8fc65f12794fdf780f87cbb061e1e7ce16ec30f9329d21ff091d1cd5df83c0",
+      "txid": "0x0a8fc65f12794fdf780f87cbb061e1e7ce16ec30f9329d21ff091d1cd5df83c0",
+      "network": "ethereum",
+      "chain": "ethereum"
+    },
+    "withdrawal": {
+      "timestamp": 1782377985000,
+      "token": "USDT",
+      "amount": 4905.163813,
+      "usd_value": 4905.163813,
+      "from": "TBEkD71bkL7fNz2HuCeisRbtvwwT2JWaMr",
+      "to": "TYw6nKvAB73w68j4THRo21jvvgnYY2pSU9",
+      "tx_hash": "TBEkD71bkL7fNz2HuCeisRbtvwwT2JWaMr_1782377985000_TYw6nKvAB73w68j4THRo21jvvgnYY2pSU9",
+      "txid": "TBEkD71bkL7fNz2HuCeisRbtvwwT2JWaMr_1782377985000_TYw6nKvAB73w68j4THRo21jvvgnYY2pSU9",
+      "network": "tron",
+      "chain": "tron"
+    },
+    "model_probability": 0.9987922310829163,
+    "delta_t_sec": 34.0,
+    "value_rv": 0.018967237399999975,
+    "missed_by_baseline_rule": true
+  },
+  {
+    "deposit": {
+      "timestamp": 1782463967000,
+      "token": "USDT",
+      "amount": 80.0,
+      "usd_value": 80.0,
+      "from": "0xdfa33a86297614bdfce852396f4ae172eb2b88f0",
+      "to": "0xcdd37ada79f589c15bd4f8fd2083dc88e34a2af2",
+      "tx_hash": "0x2e377e3e7f69ae7b7c39af59f43d12c33481071c92a76e959821ffe4c4fbe549",
+      "txid": "0x2e377e3e7f69ae7b7c39af59f43d12c33481071c92a76e959821ffe4c4fbe549",
+      "network": "ethereum",
+      "chain": "ethereum"
+    },
+    "withdrawal": {
+      "timestamp": 1782463980000,
+      "token": "USDT",
+      "amount": 76.19,
+      "usd_value": 76.19,
+      "from": "TBEkD71bkL7fNz2HuCeisRbtvwwT2JWaMr",
+      "to": "TXnLTRTD7iiRA24YSgW6YtkirtiPrkoe1y",
+      "tx_hash": "TBEkD71bkL7fNz2HuCeisRbtvwwT2JWaMr_1782463980000_TXnLTRTD7iiRA24YSgW6YtkirtiPrkoe1y",
+      "txid": "TBEkD71bkL7fNz2HuCeisRbtvwwT2JWaMr_1782463980000_TXnLTRTD7iiRA24YSgW6YtkirtiPrkoe1y",
+      "network": "tron",
+      "chain": "tron"
+    },
+    "model_probability": 0.9937716126441956,
+    "delta_t_sec": 13.0,
+    "value_rv": 0.04762500000000003,
+    "missed_by_baseline_rule": true
+  },
+  {
+    "deposit": {
+      "timestamp": 1782547307000,
+      "token": "USDC",
+      "amount": 11635.0,
+      "usd_value": 11635.0,
+      "from": "0x8136eb53dc939d434ed2ffab2df96518d9238496",
+      "to": "0xcdd37ada79f589c15bd4f8fd2083dc88e34a2af2",
+      "tx_hash": "0xb22db1ad7632a0ec6b5da3b2cd3a19a5e01b81c1f15e1d06e292220dbe8e937f",
+      "txid": "0xb22db1ad7632a0ec6b5da3b2cd3a19a5e01b81c1f15e1d06e292220dbe8e937f",
+      "network": "ethereum",
+      "chain": "ethereum"
+    },
+    "withdrawal": {
+      "timestamp": 1782547353000,
+      "token": "USDT",
+      "amount": 11464.641517,
+      "usd_value": 11464.641517,
+      "from": "TBEkD71bkL7fNz2HuCeisRbtvwwT2JWaMr",
+      "to": "TULvU4XhwQAteN13TbfpvvHLQQoaruivSX",
+      "tx_hash": "TBEkD71bkL7fNz2HuCeisRbtvwwT2JWaMr_1782547353000_TULvU4XhwQAteN13TbfpvvHLQQoaruivSX",
+      "txid": "TBEkD71bkL7fNz2HuCeisRbtvwwT2JWaMr_1782547353000_TULvU4XhwQAteN13TbfpvvHLQQoaruivSX",
+      "network": "tron",
+      "chain": "tron"
+    },
+    "model_probability": 0.996707558631897,
+    "delta_t_sec": 46.0,
+    "value_rv": 0.014641897980232056,
+    "missed_by_baseline_rule": true
+  },
+  {
+    "deposit": {
+      "timestamp": 1782046020000,
+      "token": "USDT",
+      "amount": 1499.999999,
+      "usd_value": 1499.999999,
+      "from": "THKQpK9XSrbrLtomnTwpLm3BCpyS5wXxf6",
+      "to": "TBEkD71bkL7fNz2HuCeisRbtvwwT2JWaMr",
+      "tx_hash": "THKQpK9XSrbrLtomnTwpLm3BCpyS5wXxf6_1782046020000_TBEkD71bkL7fNz2HuCeisRbtvwwT2JWaMr",
+      "txid": "THKQpK9XSrbrLtomnTwpLm3BCpyS5wXxf6_1782046020000_TBEkD71bkL7fNz2HuCeisRbtvwwT2JWaMr",
+      "network": "tron",
+      "chain": "tron"
+    },
+    "withdrawal": {
+      "timestamp": 1782046055000,
+      "token": "USDT",
+      "amount": 1469.18,
+      "usd_value": 1469.18,
+      "from": "0xcdd37ada79f589c15bd4f8fd2083dc88e34a2af2",
+      "to": "0x36cdbfccbdd9cc0df945c73552131b567befe388",
+      "tx_hash": "0xe22af6465d76e175007f14c6f6b6ef5c6d01f8d067ff3dc2b3f4ef549a4fe6b3",
+      "txid": "0xe22af6465d76e175007f14c6f6b6ef5c6d01f8d067ff3dc2b3f4ef549a4fe6b3",
+      "network": "ethereum",
+      "chain": "ethereum"
+    },
+    "model_probability": 0.9923925399780273,
+    "delta_t_sec": 35.0,
+    "value_rv": 0.020546666013697663,
+    "missed_by_baseline_rule": true
+  },
+  {
+    "deposit": {
+      "timestamp": 1782099720000,
+      "token": "USDT",
+      "amount": 5928.609999,
+      "usd_value": 5928.609999,
+      "from": "TJckMsfzubi4SwrD1dwQ62xUh2uixbovLm",
+      "to": "TBEkD71bkL7fNz2HuCeisRbtvwwT2JWaMr",
+      "tx_hash": "TJckMsfzubi4SwrD1dwQ62xUh2uixbovLm_1782099720000_TBEkD71bkL7fNz2HuCeisRbtvwwT2JWaMr",
+      "txid": "TJckMsfzubi4SwrD1dwQ62xUh2uixbovLm_1782099720000_TBEkD71bkL7fNz2HuCeisRbtvwwT2JWaMr",
+      "network": "tron",
+      "chain": "tron"
+    },
+    "withdrawal": {
+      "timestamp": 1782099755000,
+      "token": "USDC",
+      "amount": 5812.197891,
+      "usd_value": 5812.197891,
+      "from": "0xcdd37ada79f589c15bd4f8fd2083dc88e34a2af2",
+      "to": "0x87d5251fa06da372695bb1ceafa5398edcc426d2",
+      "tx_hash": "0x376bc28a61a05b603b4de598defd1512828c5c26bf68f7e86157ab2fc508b673",
+      "txid": "0x376bc28a61a05b603b4de598defd1512828c5c26bf68f7e86157ab2fc508b673",
+      "network": "ethereum",
+      "chain": "ethereum"
+    },
+    "model_probability": 0.9991218447685242,
+    "delta_t_sec": 35.0,
+    "value_rv": 0.019635649506315325,
+    "missed_by_baseline_rule": true
+  },
+  {
+    "deposit": {
+      "timestamp": 1782166785000,
+      "token": "USDT",
+      "amount": 57.999999,
+      "usd_value": 57.999999,
+      "from": "TQxfUAayGeriHfNEd9a4yHCrAUAs7jqMXj",
+      "to": "TBEkD71bkL7fNz2HuCeisRbtvwwT2JWaMr",
+      "tx_hash": "TQxfUAayGeriHfNEd9a4yHCrAUAs7jqMXj_1782166785000_TBEkD71bkL7fNz2HuCeisRbtvwwT2JWaMr",
+      "txid": "TQxfUAayGeriHfNEd9a4yHCrAUAs7jqMXj_1782166785000_TBEkD71bkL7fNz2HuCeisRbtvwwT2JWaMr",
+      "network": "tron",
+      "chain": "tron"
+    },
+    "withdrawal": {
+      "timestamp": 1782166811000,
+      "token": "USDC",
+      "amount": 54.489529,
+      "usd_value": 54.489529,
+      "from": "0xcdd37ada79f589c15bd4f8fd2083dc88e34a2af2",
+      "to": "0x52ac63b656d25eeb4e58778a54842dd618110a14",
+      "tx_hash": "0x0f4a8d49bb9bb32beca4eefbc7310c5091e9bad3b2a9cd096a19527e95eac3a8",
+      "txid": "0x0f4a8d49bb9bb32beca4eefbc7310c5091e9bad3b2a9cd096a19527e95eac3a8",
+      "network": "ethereum",
+      "chain": "ethereum"
+    },
+    "model_probability": 0.993147075176239,
+    "delta_t_sec": 26.0,
+    "value_rv": 0.06052534587112674,
+    "missed_by_baseline_rule": true
+  },
+  {
+    "deposit": {
+      "timestamp": 1782269451000,
+      "token": "USDT",
+      "amount": 499.999999,
+      "usd_value": 499.999999,
+      "from": "TUEWQEKGE9y3EkbRpKgZJpVRfZhWDTDi8D",
+      "to": "TBEkD71bkL7fNz2HuCeisRbtvwwT2JWaMr",
+      "tx_hash": "TUEWQEKGE9y3EkbRpKgZJpVRfZhWDTDi8D_1782269451000_TBEkD71bkL7fNz2HuCeisRbtvwwT2JWaMr",
+      "txid": "TUEWQEKGE9y3EkbRpKgZJpVRfZhWDTDi8D_1782269451000_TBEkD71bkL7fNz2HuCeisRbtvwwT2JWaMr",
+      "network": "tron",
+      "chain": "tron"
+    },
+    "withdrawal": {
+      "timestamp": 1782269483000,
+      "token": "USDT",
+      "amount": 488.16,
+      "usd_value": 488.16,
+      "from": "0xcdd37ada79f589c15bd4f8fd2083dc88e34a2af2",
+      "to": "0xde8c4caa2fce59b57ac8e5b4cc7d5b073157c796",
+      "tx_hash": "0x40f67c25e44b75eb5e3a441709ab004234eab42354df2fd7d383841531e4c251",
+      "txid": "0x40f67c25e44b75eb5e3a441709ab004234eab42354df2fd7d383841531e4c251",
+      "network": "ethereum",
+      "chain": "ethereum"
+    },
+    "model_probability": 0.9963823556900024,
+    "delta_t_sec": 32.0,
+    "value_rv": 0.02367999804735995,
+    "missed_by_baseline_rule": true
+  },
+  {
+    "deposit": {
+      "timestamp": 1782269682000,
+      "token": "USDT",
+      "amount": 699.999999,
+      "usd_value": 699.999999,
+      "from": "TRENBcCjjpVKiNLsYvDkztdcieFH1XNhvy",
+      "to": "TBEkD71bkL7fNz2HuCeisRbtvwwT2JWaMr",
+      "tx_hash": "TRENBcCjjpVKiNLsYvDkztdcieFH1XNhvy_1782269682000_TBEkD71bkL7fNz2HuCeisRbtvwwT2JWaMr",
+      "txid": "TRENBcCjjpVKiNLsYvDkztdcieFH1XNhvy_1782269682000_TBEkD71bkL7fNz2HuCeisRbtvwwT2JWaMr",
+      "network": "tron",
+      "chain": "tron"
+    },
+    "withdrawal": {
+      "timestamp": 1782269723000,
+      "token": "USDT",
+      "amount": 684.36,
+      "usd_value": 684.36,
+      "from": "0xcdd37ada79f589c15bd4f8fd2083dc88e34a2af2",
+      "to": "0xde8c4caa2fce59b57ac8e5b4cc7d5b073157c796",
+      "tx_hash": "0x9dbb1dace51d8da632bcb1501c79dc06898a2a03ebb5088c3d1a42f7172de5a7",
+      "txid": "0x9dbb1dace51d8da632bcb1501c79dc06898a2a03ebb5088c3d1a42f7172de5a7",
+      "network": "ethereum",
+      "chain": "ethereum"
+    },
+    "model_probability": 0.9954053163528442,
+    "delta_t_sec": 41.0,
+    "value_rv": 0.022342855746204062,
+    "missed_by_baseline_rule": true
+  },
+  {
+    "deposit": {
+      "timestamp": 1782270024000,
+      "token": "USDT",
+      "amount": 1022.969664,
+      "usd_value": 1022.969664,
+      "from": "TL1Y1tEGFLuhgfV3F6CF3RsJwviaG4CHEk",
+      "to": "TBEkD71bkL7fNz2HuCeisRbtvwwT2JWaMr",
+      "tx_hash": "TL1Y1tEGFLuhgfV3F6CF3RsJwviaG4CHEk_1782270024000_TBEkD71bkL7fNz2HuCeisRbtvwwT2JWaMr",
+      "txid": "TL1Y1tEGFLuhgfV3F6CF3RsJwviaG4CHEk_1782270024000_TBEkD71bkL7fNz2HuCeisRbtvwwT2JWaMr",
+      "network": "tron",
+      "chain": "tron"
+    },
+    "withdrawal": {
+      "timestamp": 1782270071000,
+      "token": "USDT",
+      "amount": 1001.193241,
+      "usd_value": 1001.193241,
+      "from": "0xcdd37ada79f589c15bd4f8fd2083dc88e34a2af2",
+      "to": "0xde8c4caa2fce59b57ac8e5b4cc7d5b073157c796",
+      "tx_hash": "0x3744a4afe8d8c61f15f06a9f670d9a2ccd28b49fde2358baa236148a79f66c0f",
+      "txid": "0x3744a4afe8d8c61f15f06a9f670d9a2ccd28b49fde2358baa236148a79f66c0f",
+      "network": "ethereum",
+      "chain": "ethereum"
+    },
+    "model_probability": 0.9977239966392517,
+    "delta_t_sec": 47.0,
+    "value_rv": 0.021287457259338654,
+    "missed_by_baseline_rule": true
+  },
+  {
+    "deposit": {
+      "timestamp": 1782290955000,
+      "token": "USDT",
+      "amount": 665.205886,
+      "usd_value": 665.205886,
+      "from": "TCqReiW9sGCJxCvogqhyfDkSAJpAY42MvE",
+      "to": "TBEkD71bkL7fNz2HuCeisRbtvwwT2JWaMr",
+      "tx_hash": "TCqReiW9sGCJxCvogqhyfDkSAJpAY42MvE_1782290955000_TBEkD71bkL7fNz2HuCeisRbtvwwT2JWaMr",
+      "txid": "TCqReiW9sGCJxCvogqhyfDkSAJpAY42MvE_1782290955000_TBEkD71bkL7fNz2HuCeisRbtvwwT2JWaMr",
+      "network": "tron",
+      "chain": "tron"
+    },
+    "withdrawal": {
+      "timestamp": 1782290987000,
+      "token": "USDC",
+      "amount": 650.0,
+      "usd_value": 650.0,
+      "from": "0xcdd37ada79f589c15bd4f8fd2083dc88e34a2af2",
+      "to": "0x422fc1df8d15aafcd681be17fb1c8679e5457f13",
+      "tx_hash": "0x8421e6fedd8bbb199e1438bb02bbaf1cb71b7cb8c1ed0dc03b383a8b6f0b9964",
+      "txid": "0x8421e6fedd8bbb199e1438bb02bbaf1cb71b7cb8c1ed0dc03b383a8b6f0b9964",
+      "network": "ethereum",
+      "chain": "ethereum"
+    },
+    "model_probability": 0.995219886302948,
+    "delta_t_sec": 32.0,
+    "value_rv": 0.022858916795573822,
+    "missed_by_baseline_rule": true
+  },
+  {
+    "deposit": {
+      "timestamp": 1782291096000,
+      "token": "USDT",
+      "amount": 2041.916768,
+      "usd_value": 2041.916768,
+      "from": "TUnz73eWaNoLf9XXasWUvAAKHDrEPci1nB",
+      "to": "TBEkD71bkL7fNz2HuCeisRbtvwwT2JWaMr",
+      "tx_hash": "TUnz73eWaNoLf9XXasWUvAAKHDrEPci1nB_1782291096000_TBEkD71bkL7fNz2HuCeisRbtvwwT2JWaMr",
+      "txid": "TUnz73eWaNoLf9XXasWUvAAKHDrEPci1nB_1782291096000_TBEkD71bkL7fNz2HuCeisRbtvwwT2JWaMr",
+      "network": "tron",
+      "chain": "tron"
+    },
+    "withdrawal": {
+      "timestamp": 1782291143000,
+      "token": "USDC",
+      "amount": 2000.0,
+      "usd_value": 2000.0,
+      "from": "0xcdd37ada79f589c15bd4f8fd2083dc88e34a2af2",
+      "to": "0x422fc1df8d15aafcd681be17fb1c8679e5457f13",
+      "tx_hash": "0xeac6a1099f3f42a2ddc5594e559cc6918cf8870701834852a0a24a33e92f17ef",
+      "txid": "0xeac6a1099f3f42a2ddc5594e559cc6918cf8870701834852a0a24a33e92f17ef",
+      "network": "ethereum",
+      "chain": "ethereum"
+    },
+    "model_probability": 0.9977083206176758,
+    "delta_t_sec": 47.0,
+    "value_rv": 0.020528147208006102,
+    "missed_by_baseline_rule": true
+  },
+  {
+    "deposit": {
+      "timestamp": 1782291519000,
+      "token": "USDT",
+      "amount": 2704.789474,
+      "usd_value": 2704.789474,
+      "from": "TYwC8dEaR2RJf4RUh1uuji67mG3ftdvnh7",
+      "to": "TBEkD71bkL7fNz2HuCeisRbtvwwT2JWaMr",
+      "tx_hash": "TYwC8dEaR2RJf4RUh1uuji67mG3ftdvnh7_1782291519000_TBEkD71bkL7fNz2HuCeisRbtvwwT2JWaMr",
+      "txid": "TYwC8dEaR2RJf4RUh1uuji67mG3ftdvnh7_1782291519000_TBEkD71bkL7fNz2HuCeisRbtvwwT2JWaMr",
+      "network": "tron",
+      "chain": "tron"
+    },
+    "withdrawal": {
+      "timestamp": 1782291563000,
+      "token": "USDC",
+      "amount": 2650.0,
+      "usd_value": 2650.0,
+      "from": "0xcdd37ada79f589c15bd4f8fd2083dc88e34a2af2",
+      "to": "0x529f38b1c46ea0b825a2e1792717b8eccf8d7825",
+      "tx_hash": "0xcdd5f8dc326ba1eabb412e572beb98f95746529e21d6fbe95cfcb2d894b10980",
+      "txid": "0xcdd5f8dc326ba1eabb412e572beb98f95746529e21d6fbe95cfcb2d894b10980",
+      "network": "ethereum",
+      "chain": "ethereum"
+    },
+    "model_probability": 0.9990070462226868,
+    "delta_t_sec": 44.0,
+    "value_rv": 0.020256465254197508,
+    "missed_by_baseline_rule": true
+  },
+  {
+    "deposit": {
+      "timestamp": 1782316728000,
+      "token": "USDT",
+      "amount": 5149.999999,
+      "usd_value": 5149.999999,
+      "from": "TMg1x411cTsfrauZmV74YjGxDBxKGf1mgM",
+      "to": "TBEkD71bkL7fNz2HuCeisRbtvwwT2JWaMr",
+      "tx_hash": "TMg1x411cTsfrauZmV74YjGxDBxKGf1mgM_1782316728000_TBEkD71bkL7fNz2HuCeisRbtvwwT2JWaMr",
+      "txid": "TMg1x411cTsfrauZmV74YjGxDBxKGf1mgM_1782316728000_TBEkD71bkL7fNz2HuCeisRbtvwwT2JWaMr",
+      "network": "tron",
+      "chain": "tron"
+    },
+    "withdrawal": {
+      "timestamp": 1782316787000,
+      "token": "USDC",
+      "amount": 5047.072434,
+      "usd_value": 5047.072434,
+      "from": "0xcdd37ada79f589c15bd4f8fd2083dc88e34a2af2",
+      "to": "0x8baf9f822868cd08f992a9f6bc27afcbf6d44b63",
+      "tx_hash": "0x9f83e29c47e217a38be13809871eee51285333d1b9da39e21ba35d6b0d857133",
+      "txid": "0x9f83e29c47e217a38be13809871eee51285333d1b9da39e21ba35d6b0d857133",
+      "network": "ethereum",
+      "chain": "ethereum"
+    },
+    "model_probability": 0.9951717257499695,
+    "delta_t_sec": 59.0,
+    "value_rv": 0.019985934955337067,
+    "missed_by_baseline_rule": true
+  },
+  {
+    "deposit": {
+      "timestamp": 1782332751000,
+      "token": "USDT",
+      "amount": 1016.999999,
+      "usd_value": 1016.999999,
+      "from": "TA2nwmczcbyxMLAPuEiAZGJDHq5mnbzk8N",
+      "to": "TBEkD71bkL7fNz2HuCeisRbtvwwT2JWaMr",
+      "tx_hash": "TA2nwmczcbyxMLAPuEiAZGJDHq5mnbzk8N_1782332751000_TBEkD71bkL7fNz2HuCeisRbtvwwT2JWaMr",
+      "txid": "TA2nwmczcbyxMLAPuEiAZGJDHq5mnbzk8N_1782332751000_TBEkD71bkL7fNz2HuCeisRbtvwwT2JWaMr",
+      "network": "tron",
+      "chain": "tron"
+    },
+    "withdrawal": {
+      "timestamp": 1782332795000,
+      "token": "USDC",
+      "amount": 1001.349194,
+      "usd_value": 1001.349194,
+      "from": "0xcdd37ada79f589c15bd4f8fd2083dc88e34a2af2",
+      "to": "0x36c37728a603d3c7d588b5bcbb1aa520d61f38da",
+      "tx_hash": "0x5c1a56768207236bdff6acc163aedceaf7bb830b01dc3ac2c14d8c3b15b9f247",
+      "txid": "0x5c1a56768207236bdff6acc163aedceaf7bb830b01dc3ac2c14d8c3b15b9f247",
+      "network": "ethereum",
+      "chain": "ethereum"
+    },
+    "model_probability": 0.9982312321662903,
+    "delta_t_sec": 44.0,
+    "value_rv": 0.015389188805692408,
+    "missed_by_baseline_rule": true
+  },
+  {
+    "deposit": {
+      "timestamp": 1782376548000,
+      "token": "USDT",
+      "amount": 973.863556,
+      "usd_value": 973.863556,
+      "from": "TGp5U1TmKWTZEkRmMCweFFbhF66b8VTDes",
+      "to": "TBEkD71bkL7fNz2HuCeisRbtvwwT2JWaMr",
+      "tx_hash": "TGp5U1TmKWTZEkRmMCweFFbhF66b8VTDes_1782376548000_TBEkD71bkL7fNz2HuCeisRbtvwwT2JWaMr",
+      "txid": "TGp5U1TmKWTZEkRmMCweFFbhF66b8VTDes_1782376548000_TBEkD71bkL7fNz2HuCeisRbtvwwT2JWaMr",
+      "network": "tron",
+      "chain": "tron"
+    },
+    "withdrawal": {
+      "timestamp": 1782376583000,
+      "token": "USDC",
+      "amount": 952.517222,
+      "usd_value": 952.517222,
+      "from": "0xcdd37ada79f589c15bd4f8fd2083dc88e34a2af2",
+      "to": "0x1e8274355911ba3ab49788ae02ae08aa0bccb50b",
+      "tx_hash": "0x0080d1a1cb958235408143262fed11c35d6a0cd1feb68e9f348375516ee8bbca",
+      "txid": "0x0080d1a1cb958235408143262fed11c35d6a0cd1feb68e9f348375516ee8bbca",
+      "network": "ethereum",
+      "chain": "ethereum"
+    },
+    "model_probability": 0.9986363053321838,
+    "delta_t_sec": 35.0,
+    "value_rv": 0.021919224585913215,
+    "missed_by_baseline_rule": true
+  },
+  {
+    "deposit": {
+      "timestamp": 1782391956000,
+      "token": "USDT",
+      "amount": 2583.182564,
+      "usd_value": 2583.182564,
+      "from": "TLtxYdzLjXRzYXbW41snDBQ1TaqQiMzAjm",
+      "to": "TBEkD71bkL7fNz2HuCeisRbtvwwT2JWaMr",
+      "tx_hash": "TLtxYdzLjXRzYXbW41snDBQ1TaqQiMzAjm_1782391956000_TBEkD71bkL7fNz2HuCeisRbtvwwT2JWaMr",
+      "txid": "TLtxYdzLjXRzYXbW41snDBQ1TaqQiMzAjm_1782391956000_TBEkD71bkL7fNz2HuCeisRbtvwwT2JWaMr",
+      "network": "tron",
+      "chain": "tron"
+    },
+    "withdrawal": {
+      "timestamp": 1782392003000,
+      "token": "USDT",
+      "amount": 2531.762096,
+      "usd_value": 2531.762096,
+      "from": "0xcdd37ada79f589c15bd4f8fd2083dc88e34a2af2",
+      "to": "0x708c7a3f222c645fe915f2d5dfa7e1bc7275426a",
+      "tx_hash": "0x5680dc529e6cb81ed79ed3032b8ab251bb6ab4cc2000037eef16d23716411077",
+      "txid": "0x5680dc529e6cb81ed79ed3032b8ab251bb6ab4cc2000037eef16d23716411077",
+      "network": "ethereum",
+      "chain": "ethereum"
+    },
+    "model_probability": 0.9907111525535583,
+    "delta_t_sec": 47.0,
+    "value_rv": 0.01990585904248936,
+    "missed_by_baseline_rule": true
+  }
+]
