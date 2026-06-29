@@ -28,32 +28,9 @@ notebooks/note.txt
 *.tmp
 *.bak
 
-# Data collection outputs and caches
-data/
-cache/
-result/
-results/
-src/off-chain/output/*
-!src/off-chain/output/.gitkeep
-!src/off-chain/output/logs/
-src/off-chain/output/logs/*
 
-# Ground-truth generated artifacts
-ground-truth/output/*
-ground-truth/result/*
-ground-truth/log/*
-ground-truth/models/*
-!ground-truth/models/.gitkeep
 
-# Model and large generated files
-*.pkl
-*.joblib
-*.model
-*.jsonl
 
-# Logs
-*.log
-logs/
 .env
 .venv
 notebooks/note.txt
