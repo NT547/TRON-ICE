@@ -1,0 +1,2 @@
+"""Ground-truth construction stage."""
+
