@@ -2,11 +2,11 @@ import argparse
 import json
 import logging
 import os
-import glob
-import pandas as pd
-
-from src.data_collection.scraper_trongrid import scaping_trongrid
-from src.transaction_normalizer.transaction_classifier import run_transaction_classifer
+from src.tron_ice.collection.tron import collect_tron_hot_wallet
+from src.tron_ice.ground_truth.runner import build_ground_truth
+from src.transaction_normalizer.transaction_classifier import (
+    run_transaction_normalizer,
+)
 from src.baseline_algorithm.matcher import (
     run_matching_pipeline 
 
@@ -34,7 +34,7 @@ def main():
         "--year",
         type=int,
         required=True,
-        choices=range(2020, 2026),
+        choices=range(2020, 2027),
         help="Year to scrape (e.g., 2025)",
     )
     parser.add_argument(
@@ -46,9 +46,27 @@ def main():
             "baseline_algorithm",
             "transaction_classifier",
             "data_collection",
+            "ground_truth",
             "xgboost",
         ],
-        help="Run full pipeline, baseline algorithm (matching), transaction classifier, data collection, or xgboost pipeline",
+        help="Run full pipeline, baseline, normalizer, data collection, ground_truth, or xgboost",
+    )
+    parser.add_argument(
+        "--trace-depth",
+        type=int,
+        default=0,
+        help="TRON n-hop trace for ground_truth mode (0=off)",
+    )
+    parser.add_argument(
+        "--export-training",
+        action="store_true",
+        help="Export XGBoost training pairs when mode=ground_truth",
+    )
+    parser.add_argument(
+        "--history-network-filter",
+        choices=["all", "tron-any", "tron-both"],
+        default="all",
+        help="Filter off-chain history by network when mode=ground_truth",
     )
 
     parser.add_argument(
@@ -107,9 +125,10 @@ def main():
     os.environ["MATCH_YEAR"] = str(year)
 
     if args.mode == "full":
-        scaping_trongrid(service=service, year=year)
-        classified = run_transaction_classifer(trx_file, trc20_file, hot_wallet)
-        matches = run_matching_pipeline(
+        collect_tron_hot_wallet(service=service, year=year)
+        classified = run_transaction_normalizer(trx_file, trc20_file, hot_wallet)
+        # Không lưu lại file phân loại ở đây nữa, đã lưu trong run_transaction_normalizer
+        matches = run_new_matching(
             classified["deposits"],
             classified["withdrawals"],
             args.time_window,
@@ -120,14 +139,23 @@ def main():
             None,
             args.bucket_minutes,
         )
-        # save_matched_pairs(matches, matched_file)
-
+        save_matched_pairs(matches, matched_file)
+    elif args.mode == "ground_truth":
+        summary = build_ground_truth(
+            service=service,
+            year=year,
+            trace_depth=args.trace_depth,
+            export_training=args.export_training,
+            history_network_filter=args.history_network_filter,
+        )
+        logging.info("Ground-truth done: %s", summary)
     elif args.mode == "xgboost":
-        from src.xgboost.pipeline import run_xgboost_pipeline
-        run_xgboost_pipeline(service, year, args)
-
+        raise SystemExit(
+            "The legacy --mode xgboost demo used dummy labels and is disabled. "
+            "Use ground-truth/train_xgboost.py and ground-truth/predict_xgboost.py."
+        )
     elif args.mode == "data_collection":
-        scaping_trongrid(service=service, year=year)
+        collect_tron_hot_wallet(service=service, year=year)
 
     elif args.mode == "transaction_classifier":
         classified = run_transaction_classifer(trx_file, trc20_file, hot_wallet)

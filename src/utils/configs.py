@@ -1,9 +1,12 @@
 import os
 import threading
+from pathlib import Path
 
 from dotenv import load_dotenv
 
-load_dotenv()
+# Always load .env from repo root (not dependent on current working directory)
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+load_dotenv(_REPO_ROOT / ".env")
 
 TRONGRID_API = "https://api.trongrid.io/v1/accounts"
 
@@ -44,3 +47,4 @@ TIME_WINDOW = 600
 VALUE_THRESHOLD = 0.01
 REQUEST_DELAY = 1
 TARGET_TOKENS = ["USDT", "USDC", "TRX"]
+TOKEN_WHITELIST = TARGET_TOKENS

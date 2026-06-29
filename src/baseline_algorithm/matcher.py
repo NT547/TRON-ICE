@@ -156,18 +156,54 @@ def run_matching_pipeline(
     """
     Pipeline xử lý đầu cuối (End-to-End) tối ưu dữ liệu lớn bằng CSV Chunking
     """
-    # BƯỚC CỐT LÕI MỚI: Thu thập nhanh toàn bộ địa chỉ gửi tiền (Deposit Senders) để làm bản đồ đối chiếu toàn cục
-    logging.info("BƯỚC 0: Đang thiết lập bản đồ định danh địa chỉ nạp (Global Deposit Senders)...")
-    all_deposit_senders = set()
-    pre_deposit_chunks = load_csv(deposits_path, chunk_size=chunk_size)
-    for chunk in pre_deposit_chunks:
-        for col in ["from", "sender"]:
-            if col in chunk.columns:
-                # Đưa về dạng lowercase để tránh sai lệch chữ hoa/chữ thường từ các hàm parser
-                all_deposit_senders.update(
-                    chunk[col].dropna().astype(str).str.lower().str.strip().tolist()
-                )
-    logging.info(f"Đã ghi nhận tổng cộng {len(all_deposit_senders)} địa chỉ ví nạp duy nhất.")
+    logging.info(
+        f"Starting matching: {len(deposits)} deposits, {len(withdrawals)} withdrawals, using {num_processes} processes."
+    )
+    all_transactions = deposits + withdrawals
+    prefetch_price_histories(all_transactions, year, cache_dir, api_key)
+    compute_usd_values(deposits, year, cache_dir, api_key, bucket_minutes)
+    compute_usd_values(withdrawals, year, cache_dir, api_key, bucket_minutes)
+
+    deposits = [
+        d for d in deposits
+        if d.get("token") and d.get("timestamp") is not None and d.get("usd_value") not in (None, 0.0)
+    ]
+    withdrawals = [
+        w for w in withdrawals
+        if w.get("token") and w.get("timestamp") is not None and w.get("usd_value") not in (None, 0.0)
+    ]
+    withdrawals_by_token, withdrawal_timestamps = build_withdrawal_index(withdrawals)
+
+    if not deposits or not withdrawals:
+        return []
+
+    if num_processes <= 1:
+        return process_batch(
+            deposits,
+            withdrawals_by_token,
+            withdrawal_timestamps,
+            time_window,
+            value_threshold,
+        )
+
+    batch_size = max(1, len(deposits) // num_processes)
+    batches = [deposits[i : i + batch_size] for i in range(0, len(deposits), batch_size)]
+    matches: List[Dict[str, Any]] = []
+    with ThreadPoolExecutor(max_workers=num_processes) as executor:
+        futures = [
+            executor.submit(
+                process_batch,
+                batch,
+                withdrawals_by_token,
+                withdrawal_timestamps,
+                time_window,
+                value_threshold,
+            )
+            for batch in batches
+        ]
+        for future in futures:
+            matches.extend(future.result())
+    return matches
 
     logging.info("BƯỚC 1: Bắt đầu tải và định giá danh sách dữ liệu Rút tiền (Withdrawals)...")
     withdrawal_chunks = load_csv(withdrawals_path, chunk_size=chunk_size)
