@@ -54,6 +54,10 @@ ground-truth/models/*
 # Logs
 *.log
 logs/
+.env
+.venv
+notebooks/note.txt
+analysis.*
 
 # OS / editor
 .DS_Store
