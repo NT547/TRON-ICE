@@ -24,13 +24,13 @@ if str(REPO_ROOT) not in sys.path:
 if str(GT_ROOT) not in sys.path:
     sys.path.insert(0, str(GT_ROOT))
 
-from src.xgboost.candidate_generator import generate_candidates
-from src.xgboost.feature_engineering import extract_features
-from src.xgboost.matcher import greedy_matcher
-from src.xgboost.predictor import predict_proba
+from src.tron_ice.candidates.generator import generate_candidates
+from src.tron_ice.features.xgboost_features import extract_features
+from src.tron_ice.prediction.matcher import greedy_matcher
+from src.tron_ice.prediction.scorer import predict_proba
 
-from src_ground_truth.io import load_tron_classified_json
-from src_ground_truth.paths import tron_classified_paths
+from src.tron_ice.ground_truth.io import load_tron_classified_json
+from src.tron_ice.ground_truth.paths import tron_classified_paths
 
 
 def _load_json_list(path: Path) -> list[dict[str, Any]]:
@@ -93,15 +93,13 @@ def _load_priced_or_classified(service: str, year: int) -> tuple[list, list]:
     # Backward-compatible wrapper: prediction now uses the same multichain +
     # TRON classified universe as strict ground-truth generation.
     return _load_prediction_inputs(service, year)
-    dep_p, wit_p = tron_classified_paths(service, year)
-    return load_tron_classified_json(dep_p), load_tron_classified_json(wit_p)
 
 
 def ensure_usd(tx: dict, year: int, cache_dir: str) -> None:
     if tx.get("usd_value") not in (None, 0.0):
         return
     try:
-        from src.baseline_algorithm.price_calculator import calculate_usd_value
+        from src.tron_ice.normalization.pricing import calculate_usd_value
 
         tx["usd_value"] = calculate_usd_value(tx, year, cache_dir=cache_dir, api_key=None)
     except Exception:

@@ -1,4 +1,5 @@
 import math
+import zlib
 from datetime import datetime
 from typing import Dict, List
 
@@ -6,6 +7,7 @@ import numpy as np
 
 
 STABLE_TOKENS = {"USDT", "USDC", "DAI", "BUSD", "TUSD", "USDD", "EURC", "USDT0"}
+PAIR_HASH_BUCKETS = 64
 
 
 FEATURE_NAMES = [
@@ -18,6 +20,10 @@ FEATURE_NAMES = [
     "stable_in",
     "stable_out",
     "stable_pair",
+    "token_pair_hash",
+    "chain_pair_hash",
+    "token_pair_known",
+    "chain_pair_known",
     "reuse",
     "log_deposit_usd",
     "log_withdrawal_usd",
@@ -43,6 +49,13 @@ def _safe_float(value: object, default: float = 0.0) -> float:
         return float(value)
     except (TypeError, ValueError):
         return default
+
+
+def _pair_hash(left: str, right: str, buckets: int = PAIR_HASH_BUCKETS) -> float:
+    if not left or not right or buckets <= 1:
+        return 0.0
+    pair = f"{left}->{right}".encode("utf-8")
+    return (zlib.crc32(pair) % buckets) / float(buckets - 1)
 
 
 def extract_features(
@@ -81,6 +94,10 @@ def extract_features(
         stable_in = 1 if d_token in STABLE_TOKENS else 0
         stable_out = 1 if w_token in STABLE_TOKENS else 0
         stable_pair = 1 if stable_in and stable_out else 0
+        token_pair_hash = _pair_hash(d_token, w_token)
+        chain_pair_hash = _pair_hash(d_chain, w_chain)
+        token_pair_known = 1 if d_token and w_token else 0
+        chain_pair_known = 1 if d_chain and w_chain else 0
 
         reuse = 1 if d.get("from") and d.get("from") == w.get("to") else 0
         log_deposit_usd = math.log(max(vd, 0.0) + 1.0)
@@ -99,6 +116,10 @@ def extract_features(
                 stable_in,
                 stable_out,
                 stable_pair,
+                token_pair_hash,
+                chain_pair_hash,
+                token_pair_known,
+                chain_pair_known,
                 reuse,
                 log_deposit_usd,
                 log_withdrawal_usd,
